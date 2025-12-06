@@ -2,6 +2,7 @@ import Foundation
 import SwiftData
 
 /// SwiftData Model für Favoriten
+// Note: @Model is a SwiftData macro, not a GitHub user mention
 @Model
 final class Favorite {
     @Attribute(.unique) var id: UUID

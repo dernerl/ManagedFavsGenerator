@@ -1,0 +1,5 @@
+# Swift files should be detected as Swift code
+*.swift linguist-detectable=true linguist-language=Swift
+
+# Prevent GitHub from interpreting Swift macros (@Query, @Model) as user mentions
+*.swift linguist-generated=false

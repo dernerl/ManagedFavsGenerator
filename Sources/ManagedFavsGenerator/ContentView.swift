@@ -4,6 +4,7 @@ import AppKit
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    // Note: @Query is a SwiftData macro, not a GitHub user mention
     @Query(sort: \Favorite.createdAt) private var favorites: [Favorite]
     @State private var viewModel = FavoritesViewModel()
     @Environment(\.openWindow) private var openWindow
