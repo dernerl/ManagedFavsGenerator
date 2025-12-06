@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2024-12-06
+
+### Fixed
+- Added `.gitattributes` to prevent GitHub from interpreting Swift macros as user mentions
+- Added clarifying comments for `@Query` and `@Model` Swift macros
+- Resolves false contributor attribution to GitHub users @query and @model
+
+### Documentation
+- Added Semantic Versioning guidelines to AGENTS.md
+- Clarified version bump strategy (MAJOR.MINOR.PATCH)
+
 ## [1.0.0] - 2024-12-06
 
 ### Added
