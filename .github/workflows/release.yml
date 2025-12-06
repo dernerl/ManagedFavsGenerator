@@ -1,0 +1,114 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: macos-15
+    
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Select Xcode version
+      run: sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer
+    
+    - name: Show versions
+      run: |
+        xcodebuild -version
+        swift --version
+    
+    - name: Extract version from tag
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+    
+    - name: Build Release
+      run: swift build -c release
+    
+    - name: Create App Bundle
+      run: |
+        mkdir -p build
+        
+        # Copy executable
+        cp .build/release/ManagedFavsGenerator build/
+        
+        # Create App Bundle structure
+        mkdir -p "build/ManagedFavsGenerator.app/Contents/MacOS"
+        mkdir -p "build/ManagedFavsGenerator.app/Contents/Resources"
+        
+        # Move executable to App Bundle
+        mv build/ManagedFavsGenerator "build/ManagedFavsGenerator.app/Contents/MacOS/"
+        
+        # Create Info.plist
+        cat > "build/ManagedFavsGenerator.app/Contents/Info.plist" << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>ManagedFavsGenerator</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.github.dernerl.ManagedFavsGenerator</string>
+            <key>CFBundleName</key>
+            <string>ManagedFavsGenerator</string>
+            <key>CFBundleVersion</key>
+            <string>${{ steps.version.outputs.VERSION }}</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${{ steps.version.outputs.VERSION }}</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>LSMinimumSystemVersion</key>
+            <string>15.0</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+        </dict>
+        </plist>
+        EOF
+        
+        # Copy Assets if they exist
+        if [ -d "Sources/ManagedFavsGenerator/Resources/Assets.xcassets" ]; then
+          cp -r Sources/ManagedFavsGenerator/Resources/Assets.xcassets "build/ManagedFavsGenerator.app/Contents/Resources/" || true
+        fi
+    
+    - name: Create ZIP archive
+      run: |
+        cd build
+        zip -r "../ManagedFavsGenerator-v${{ steps.version.outputs.VERSION }}.zip" ManagedFavsGenerator.app
+        cd ..
+    
+    - name: Generate Checksums
+      run: |
+        shasum -a 256 ManagedFavsGenerator-v${{ steps.version.outputs.VERSION }}.zip > checksums.txt
+    
+    - name: Extract Changelog
+      id: changelog
+      run: |
+        if [ -f CHANGELOG.md ]; then
+          # Extract version section from CHANGELOG.md
+          sed -n "/## \[${GITHUB_REF#refs/tags/v}\]/,/## \[/p" CHANGELOG.md | sed '$d' > release_notes.txt
+          
+          # If empty, use default
+          if [ ! -s release_notes.txt ]; then
+            echo "Release v${GITHUB_REF#refs/tags/v}" > release_notes.txt
+          fi
+        else
+          echo "Release v${GITHUB_REF#refs/tags/v}" > release_notes.txt
+        fi
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ManagedFavsGenerator-v${{ steps.version.outputs.VERSION }}.zip
+          checksums.txt
+        body_path: release_notes.txt
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

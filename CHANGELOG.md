@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2024-12-06
+
 ### Added
 - Initial release
 - SwiftUI-based native macOS app
@@ -31,10 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - @Model for SwiftData entities
 - @Query for automatic UI updates
 - Protocol-based services
-
-## [1.0.0] - TBD
-
-Initial public release.
 
 ---
 
