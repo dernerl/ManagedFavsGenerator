@@ -231,15 +231,50 @@ struct FavoriteRowView: View {
     let onRemove: () -> Void
     @State private var isHovering = false
     
+    /// Generates the favicon URL using Google's favicon service
+    private var faviconURL: URL? {
+        guard !favorite.url.isEmpty,
+              let url = URL(string: favorite.url),
+              let domain = url.host else {
+            return nil
+        }
+        return URL(string: "https://www.google.com/s2/favicons?domain=\(domain)&sz=32")
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Label("Favorite", systemImage: "star.fill")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.secondary)
-                    .imageScale(.small)
+                // Favicon + Title
+                HStack(spacing: 8) {
+                    // Favicon
+                    AsyncImage(url: faviconURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 20, height: 20)
+                        case .failure, .empty:
+                            Image(systemName: "globe")
+                                .foregroundStyle(.secondary)
+                                .frame(width: 20, height: 20)
+                                .imageScale(.medium)
+                        @unknown default:
+                            ProgressView()
+                                .controlSize(.small)
+                                .frame(width: 20, height: 20)
+                        }
+                    }
+                    
+                    Label("Favorite", systemImage: "star.fill")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.secondary)
+                        .imageScale(.small)
+                }
+                
                 Spacer()
+                
                 Button(action: onRemove) {
                     Image(systemName: "trash")
                         .foregroundStyle(.red)
