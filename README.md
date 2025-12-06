@@ -30,7 +30,14 @@ Instead of manually creating complex JSON or Plist files, you use a simple, intu
 
 ## 🚀 Quick Start
 
-### Build & Run
+### Option 1: Download Pre-built Release
+
+1. **Download** the latest release from [GitHub Releases](https://github.com/dernerl/ManagedFavsGenerator/releases/latest)
+2. **Unzip** `ManagedFavsGenerator-vX.X.X.zip`
+3. **Move** `ManagedFavsGenerator.app` to your Applications folder
+4. **Launch** the app
+
+### Option 2: Build from Source
 
 ```bash
 # Clone the repository
@@ -45,6 +52,80 @@ swift build -c release
 ```
 
 Or open `Package.swift` in Xcode and press ⌘R.
+
+---
+
+### 🔒 macOS Gatekeeper (First Launch)
+
+Since this app is not notarized by Apple, macOS Gatekeeper will block it on first launch. You need to allow it manually.
+
+#### **Method 1: GUI (System Settings)**
+
+1. Try to open `ManagedFavsGenerator.app`
+2. macOS shows: _"ManagedFavsGenerator.app can't be opened because it is from an unidentified developer"_
+3. Click **OK**
+4. Open **System Settings** → **Privacy & Security**
+5. Scroll down to **Security** section
+6. Click **Open Anyway** next to the blocked app message
+7. Click **Open** in the confirmation dialog
+8. App will launch successfully
+
+**Screenshot:**
+```
+System Settings → Privacy & Security
+┌─────────────────────────────────────────┐
+│ Security                                │
+│ "ManagedFavsGenerator.app" was blocked │
+│ [Open Anyway]                           │
+└─────────────────────────────────────────┘
+```
+
+#### **Method 2: Terminal (Quick)**
+
+Remove the quarantine attribute to bypass Gatekeeper:
+
+```bash
+# Navigate to where you saved the app
+cd ~/Downloads
+
+# Remove quarantine flag
+xattr -cr ManagedFavsGenerator.app
+
+# Now open normally
+open ManagedFavsGenerator.app
+```
+
+**Explanation:**
+- `xattr` = Extended attributes tool
+- `-c` = Clear all attributes
+- `-r` = Recursive (for app bundles)
+
+#### **Method 3: Right-Click (Alternative)**
+
+1. **Right-click** (or Control-click) on `ManagedFavsGenerator.app`
+2. Select **Open** from context menu
+3. macOS shows modified dialog with **Open** button
+4. Click **Open**
+5. App will launch and be remembered for future launches
+
+---
+
+### ✅ Verification (Optional)
+
+Verify the download integrity using checksums:
+
+```bash
+# Download checksums
+curl -L -O https://github.com/dernerl/ManagedFavsGenerator/releases/download/vX.X.X/checksums.txt
+
+# Verify ZIP file
+shasum -a 256 ManagedFavsGenerator-vX.X.X.zip
+cat checksums.txt
+
+# Both SHA-256 hashes should match
+```
+
+---
 
 ## 📖 How To Use
 
