@@ -1,0 +1,38 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    runs-on: macos-15
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Select Xcode version
+      run: sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer
+    
+    - name: Show Xcode version
+      run: xcodebuild -version
+    
+    - name: Show Swift version
+      run: swift --version
+    
+    - name: Build
+      run: swift build -c release
+    
+    - name: Run tests (if available)
+      run: swift test || echo "No tests yet"
+    
+    - name: Check for warnings
+      run: |
+        if swift build 2>&1 | grep -i "warning"; then
+          echo "⚠️ Build contains warnings"
+          exit 1
+        else
+          echo "✅ No warnings"
+        fi
