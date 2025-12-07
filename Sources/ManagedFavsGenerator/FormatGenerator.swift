@@ -17,7 +17,11 @@ enum FormatGenerator {
             ])
         }
         
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: items, options: [.prettyPrinted, .sortedKeys]),
+        // Use JSONEncoder with .withoutEscapingSlashes to prevent https:// -> https:\/\/
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        
+        guard let jsonData = try? encoder.encode(items),
               let jsonString = String(data: jsonData, encoding: .utf8) else {
             return "[]"
         }
