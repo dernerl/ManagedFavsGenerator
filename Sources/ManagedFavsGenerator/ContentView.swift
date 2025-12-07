@@ -9,6 +9,16 @@ struct ContentView: View {
     @State private var viewModel = FavoritesViewModel()
     @Environment(\.openWindow) private var openWindow
     
+    /// Root level items (no parent)
+    private var rootLevelItems: [Favorite] {
+        favorites.filter { $0.parentID == nil }.sorted { $0.order < $1.order }
+    }
+    
+    /// Get children of a folder
+    private func childrenOf(_ folder: Favorite) -> [Favorite] {
+        favorites.filter { $0.parentID == folder.id }.sorted { $0.order < $1.order }
+    }
+    
     var body: some View {
         ZStack {
             // Hidden helper view um First Responder zu aktivieren
@@ -121,16 +131,48 @@ struct ContentView: View {
                 
                 ScrollView {
                     VStack(spacing: 12) {
-                        ForEach(favorites) { favorite in
-                            FavoriteRowView(
-                                favorite: favorite,
-                                onRemove: { 
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                        viewModel.removeFavorite(favorite)
+                        // Root level items (no parent)
+                        ForEach(rootLevelItems) { item in
+                            if item.isFolder {
+                                // Folder with children
+                                DisclosureGroup {
+                                    VStack(spacing: 12) {
+                                        ForEach(childrenOf(item)) { child in
+                                            FavoriteRowView(
+                                                favorite: child,
+                                                onRemove: {
+                                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                                        viewModel.removeFavorite(child)
+                                                    }
+                                                }
+                                            )
+                                            .padding(.leading, 16)
+                                            .transition(.scale.combined(with: .opacity))
+                                        }
                                     }
+                                } label: {
+                                    FolderRowView(
+                                        folder: item,
+                                        onRemove: {
+                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                                viewModel.removeFavorite(item)
+                                            }
+                                        }
+                                    )
                                 }
-                            )
-                            .transition(.scale.combined(with: .opacity))
+                                .disclosureGroupStyle(.automatic)
+                            } else {
+                                // Regular favorite
+                                FavoriteRowView(
+                                    favorite: item,
+                                    onRemove: {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                            viewModel.removeFavorite(item)
+                                        }
+                                    }
+                                )
+                                .transition(.scale.combined(with: .opacity))
+                            }
                         }
                     }
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: favorites.count)
