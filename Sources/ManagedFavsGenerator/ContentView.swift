@@ -227,8 +227,9 @@ struct FavoriteRowView: View {
     
     /// Generates the favicon URL using Google's favicon service
     private var faviconURL: URL? {
-        guard !favorite.url.isEmpty,
-              let url = URL(string: favorite.url),
+        guard let urlString = favorite.url,
+              !urlString.isEmpty,
+              let url = URL(string: urlString),
               let domain = url.host else {
             return nil
         }
@@ -286,7 +287,10 @@ struct FavoriteRowView: View {
             .frame(height: 22)
             
             AppKitTextField(
-                text: $favorite.url,
+                text: Binding(
+                    get: { favorite.url ?? "" },
+                    set: { favorite.url = $0.isEmpty ? nil : $0 }
+                ),
                 placeholder: "URL"
             )
             .frame(height: 22)

@@ -9,12 +9,15 @@ enum FormatGenerator {
         // First item: toplevel_name
         items.append(["toplevel_name": toplevelName])
         
-        // Favorites
-        for favorite in favorites where !favorite.name.isEmpty && !favorite.url.isEmpty {
-            items.append([
-                "url": favorite.url,
-                "name": favorite.name
-            ])
+        // Only export favorites (not folders) at root level
+        let rootFavorites = favorites.filter { !$0.isFolder && $0.parentID == nil }
+        for favorite in rootFavorites where !favorite.name.isEmpty {
+            if let url = favorite.url, !url.isEmpty {
+                items.append([
+                    "url": url,
+                    "name": favorite.name
+                ])
+            }
         }
         
         // Use JSONEncoder with .withoutEscapingSlashes to prevent https:// -> https:\/\/
@@ -46,14 +49,17 @@ enum FormatGenerator {
         plistLines.append("\t\t\t<string>\(toplevelName.xmlEscaped)</string>")
         plistLines.append("\t\t</dict>")
         
-        // Favorites
-        for favorite in favorites where !favorite.name.isEmpty && !favorite.url.isEmpty {
-            plistLines.append("\t\t<dict>")
-            plistLines.append("\t\t\t<key>name</key>")
-            plistLines.append("\t\t\t<string>\(favorite.name.xmlEscaped)</string>")
-            plistLines.append("\t\t\t<key>url</key>")
-            plistLines.append("\t\t\t<string>\(favorite.url.xmlEscaped)</string>")
-            plistLines.append("\t\t</dict>")
+        // Only export favorites (not folders) at root level
+        let rootFavorites = favorites.filter { !$0.isFolder && $0.parentID == nil }
+        for favorite in rootFavorites where !favorite.name.isEmpty {
+            if let url = favorite.url, !url.isEmpty {
+                plistLines.append("\t\t<dict>")
+                plistLines.append("\t\t\t<key>name</key>")
+                plistLines.append("\t\t\t<string>\(favorite.name.xmlEscaped)</string>")
+                plistLines.append("\t\t\t<key>url</key>")
+                plistLines.append("\t\t\t<string>\(url.xmlEscaped)</string>")
+                plistLines.append("\t\t</dict>")
+            }
         }
         
         plistLines.append("\t</array>")
