@@ -8,7 +8,6 @@ struct ContentView: View {
     @Query(sort: \Favorite.createdAt) private var favorites: [Favorite]
     @State private var viewModel = FavoritesViewModel()
     @Environment(\.openWindow) private var openWindow
-    @AppStorage("defaultToplevelName") private var defaultToplevelName = "managedFavs"
     
     var body: some View {
         ZStack {
@@ -73,11 +72,6 @@ struct ContentView: View {
         .onAppear {
             // ModelContext in ViewModel injizieren
             viewModel = FavoritesViewModel(modelContext: modelContext)
-            
-            // Default Toplevel Name aus Settings laden
-            if viewModel.toplevelName == "managedFavs" {
-                viewModel.toplevelName = defaultToplevelName
-            }
             
             // Window-Aktivierung beim View-Erscheinen
             // Der Hauptteil des Focus-Managements wird im AppDelegate erledigt

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 import OSLog
@@ -9,7 +10,12 @@ private let logger = Logger(subsystem: "ManagedFavsGenerator", category: "ViewMo
 @MainActor
 class FavoritesViewModel {
     // MARK: - Properties
-    var toplevelName: String = "managedFavs"
+    var toplevelName: String = "managedFavs" {
+        didSet {
+            // Save to UserDefaults when changed
+            UserDefaults.standard.set(toplevelName, forKey: "defaultToplevelName")
+        }
+    }
     var showCopiedFeedback: Bool = false
     var errorMessage: String?
     var showError: Bool = false
@@ -30,6 +36,11 @@ class FavoritesViewModel {
         self.clipboardService = clipboardService
         self.fileService = fileService
         self.modelContext = modelContext
+        
+        // Load persisted toplevelName from UserDefaults
+        if let savedName = UserDefaults.standard.string(forKey: "defaultToplevelName") {
+            self.toplevelName = savedName
+        }
     }
     
     // MARK: - Business Logic
