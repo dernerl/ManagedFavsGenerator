@@ -45,18 +45,37 @@ class FavoritesViewModel {
     
     // MARK: - Business Logic
     
-    func addFavorite() {
+    func addFavorite(parentID: UUID? = nil) {
         guard let modelContext = modelContext else {
             logger.error("ModelContext nicht verfügbar")
             return
         }
         
-        let favorite = Favorite()
+        let favorite = Favorite(parentID: parentID)
         modelContext.insert(favorite)
         
         do {
             try modelContext.save()
             logger.info("Favorit hinzugefügt und gespeichert")
+        } catch {
+            logger.error("Fehler beim Speichern: \(error.localizedDescription)")
+            handleError(error)
+        }
+    }
+    
+    func addFolder() {
+        guard let modelContext = modelContext else {
+            logger.error("ModelContext nicht verfügbar")
+            return
+        }
+        
+        // Folder = Favorite with url = nil
+        let folder = Favorite(name: "New Folder", url: nil)
+        modelContext.insert(folder)
+        
+        do {
+            try modelContext.save()
+            logger.info("Ordner hinzugefügt und gespeichert")
         } catch {
             logger.error("Fehler beim Speichern: \(error.localizedDescription)")
             handleError(error)

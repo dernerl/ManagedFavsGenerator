@@ -50,6 +50,17 @@ struct ContentView: View {
                 .keyboardShortcut("n", modifiers: [.command])
                 .help("Add a new favorite (⌘N)")
                 
+                // Add Folder
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        viewModel.addFolder()
+                    }
+                } label: {
+                    Label("Add Folder", systemImage: "folder.badge.plus")
+                }
+                .keyboardShortcut("n", modifiers: [.command, .shift])
+                .help("Add a new folder (⌘⇧N)")
+                
                 Divider()
                 
                 // Copy JSON
