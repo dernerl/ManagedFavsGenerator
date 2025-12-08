@@ -379,10 +379,13 @@ struct FavoriteRowView: View {
     @State private var isFaviconHovered = false  // Separate hover state for favicon
     @AppStorage("faviconProvider") private var faviconProvider: FaviconProvider = .google
     
+    // Cached favicon URL - only computed when URL or provider changes
+    @State private var cachedFaviconURL: URL?
+    
     private let logger = Logger(subsystem: "ManagedFavsGenerator", category: "Favicons")
     
-    /// Generates the favicon URL using the selected provider
-    private var faviconURL: URL? {
+    /// Computes the favicon URL for the current favorite URL and provider
+    private func computeFaviconURL() -> URL? {
         guard let urlString = favorite.url,
               !urlString.isEmpty,
               let url = URL(string: urlString),
@@ -406,7 +409,7 @@ struct FavoriteRowView: View {
                 // Favicon + Title
                 HStack(spacing: 8) {
                     // Favicon with hover effects
-                    AsyncImage(url: faviconURL) { phase in
+                    AsyncImage(url: cachedFaviconURL) { phase in
                         Group {
                             switch phase {
                             case .success(let image):
@@ -499,6 +502,18 @@ struct FavoriteRowView: View {
             .shadow(radius: 8)
             .onAppear { isDragging = true }
             .onDisappear { isDragging = false }
+        }
+        .onAppear {
+            // Compute favicon URL when view first appears
+            cachedFaviconURL = computeFaviconURL()
+        }
+        .onChange(of: favorite.url) { oldValue, newValue in
+            // Recompute favicon URL when favorite URL changes
+            cachedFaviconURL = computeFaviconURL()
+        }
+        .onChange(of: faviconProvider) { oldValue, newValue in
+            // Recompute favicon URL when provider changes
+            cachedFaviconURL = computeFaviconURL()
         }
     }
 }
