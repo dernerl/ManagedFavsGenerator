@@ -8,6 +8,7 @@ struct ContentView: View {
     // Note: @Query is a SwiftData macro, not a GitHub user mention
     @Query(sort: \Favorite.createdAt) private var favorites: [Favorite]
     @State private var viewModel = FavoritesViewModel()
+    @State private var showImportJSON = false
     @Environment(\.openWindow) private var openWindow
     
     /// Root level items (no parent)
@@ -87,6 +88,28 @@ struct ContentView: View {
                 
                 Divider()
                 
+                // Import JSON (Copy/Paste)
+                Button {
+                    showImportJSON = true
+                } label: {
+                    Label("Import JSON", systemImage: "doc.text")
+                }
+                .keyboardShortcut("i", modifiers: [.command])
+                .help("Import JSON via Copy/Paste (⌘I)")
+                
+                // Import Plist (File)
+                Button {
+                    Task {
+                        await viewModel.importPlistFile(replaceAll: true)
+                    }
+                } label: {
+                    Label("Import Plist", systemImage: "doc.badge.arrow.up")
+                }
+                .keyboardShortcut("i", modifiers: [.command, .shift])
+                .help("Import Plist file (⌘⇧I)")
+                
+                Divider()
+                
                 // Copy JSON
                 Button {
                     let json = FormatGenerator.generateJSON(
@@ -138,6 +161,13 @@ struct ContentView: View {
             }
         } message: {
             Text(viewModel.errorMessage ?? "Ein unerwarteter Fehler ist aufgetreten")
+        }
+        .sheet(isPresented: $showImportJSON) {
+            ImportJSONView { jsonString in
+                Task {
+                    await viewModel.importJSONString(jsonString, replaceAll: true)
+                }
+            }
         }
     }
     

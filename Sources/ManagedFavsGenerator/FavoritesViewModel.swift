@@ -23,6 +23,7 @@ class FavoritesViewModel {
     // MARK: - Services (Dependency Injection)
     private let clipboardService: ClipboardServiceProtocol
     private let fileService: FileServiceProtocol
+    private let importService: ImportServiceProtocol
     
     // MARK: - SwiftData Context
     private var modelContext: ModelContext?
@@ -31,10 +32,12 @@ class FavoritesViewModel {
     init(
         clipboardService: ClipboardServiceProtocol = ClipboardService(),
         fileService: FileServiceProtocol = FileService(),
+        importService: ImportServiceProtocol = ImportService(),
         modelContext: ModelContext? = nil
     ) {
         self.clipboardService = clipboardService
         self.fileService = fileService
+        self.importService = importService
         self.modelContext = modelContext
         
         // Load persisted toplevelName from UserDefaults
@@ -177,6 +180,104 @@ class FavoritesViewModel {
             }
         } catch {
             handleError(error)
+        }
+    }
+    
+    // MARK: - Import
+    
+    /// Import Plist file via file picker
+    func importPlistFile(replaceAll: Bool = true) async {
+        do {
+            // Datei auswählen
+            guard let fileURL = try await importService.selectFileForImport() else {
+                logger.info("Import abgebrochen")
+                return
+            }
+            
+            // Nur Plist erlauben
+            guard fileURL.pathExtension.lowercased() == "plist" else {
+                throw AppError.importUnsupportedFormat(fileURL.pathExtension)
+            }
+            
+            // Datei parsen
+            let parsedConfig = try FormatParser.parse(fileURL: fileURL)
+            
+            // Import durchführen
+            try await performImport(parsedConfig: parsedConfig, replaceAll: replaceAll)
+            
+            logger.info("Plist Import erfolgreich: \(parsedConfig.favorites.count) Items")
+            
+        } catch {
+            handleError(error)
+        }
+    }
+    
+    /// Import JSON from string (copy/paste)
+    func importJSONString(_ jsonString: String, replaceAll: Bool = true) async {
+        do {
+            // Parse JSON string
+            let parsedConfig = try FormatParser.parseJSONString(jsonString)
+            
+            // Import durchführen
+            try await performImport(parsedConfig: parsedConfig, replaceAll: replaceAll)
+            
+            logger.info("JSON Import erfolgreich: \(parsedConfig.favorites.count) Items")
+            
+        } catch {
+            handleError(error)
+        }
+    }
+    
+    /// Shared import logic
+    private func performImport(parsedConfig: ParsedConfiguration, replaceAll: Bool) async throws {
+        logger.info("Import gestartet: \(parsedConfig.favorites.count) Items, replaceAll=\(replaceAll)")
+        
+        guard let modelContext = modelContext else {
+            logger.error("ModelContext nicht verfügbar")
+            return
+        }
+        
+        // Option 1: Alles ersetzen (Delete all existing)
+        if replaceAll {
+            // Delete all existing favorites
+            let fetchDescriptor = FetchDescriptor<Favorite>()
+            let existingFavorites = try modelContext.fetch(fetchDescriptor)
+            
+            for favorite in existingFavorites {
+                modelContext.delete(favorite)
+            }
+            
+            logger.info("Bestehende Favoriten gelöscht: \(existingFavorites.count)")
+        }
+        
+        // Import parsed favorites
+        importParsedFavorites(parsedConfig.favorites, parentID: nil, modelContext: modelContext)
+        
+        // Update toplevelName
+        self.toplevelName = parsedConfig.toplevelName
+        
+        // Save to database
+        try modelContext.save()
+        
+        logger.info("Import erfolgreich abgeschlossen: \(parsedConfig.favorites.count) Items importiert")
+    }
+    
+    /// Rekursiv Favoriten importieren (unterstützt Ordner)
+    private func importParsedFavorites(_ parsedFavorites: [ParsedFavorite], parentID: UUID?, modelContext: ModelContext) {
+        for parsedFav in parsedFavorites {
+            let favorite = Favorite(
+                name: parsedFav.name,
+                url: parsedFav.url,
+                parentID: parentID,
+                order: parsedFav.order
+            )
+            
+            modelContext.insert(favorite)
+            
+            // Wenn Ordner: Kinder rekursiv importieren
+            if let children = parsedFav.children {
+                importParsedFavorites(children, parentID: favorite.id, modelContext: modelContext)
+            }
         }
     }
     
