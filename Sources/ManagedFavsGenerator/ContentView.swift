@@ -407,23 +407,22 @@ struct FavoriteRowView: View {
                 HStack(spacing: 8) {
                     // Favicon with hover effects
                     AsyncImage(url: faviconURL) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 20, height: 20)
-                                .transition(.scale.combined(with: .opacity))  // Fade-in + scale transition
-                        case .failure, .empty:
-                            Image(systemName: "globe")
-                                .foregroundStyle(.secondary)
-                                .frame(width: 20, height: 20)
-                                .imageScale(.medium)
-                        @unknown default:
-                            ProgressView()
-                                .controlSize(.small)
-                                .frame(width: 20, height: 20)
+                        Group {
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                            case .failure, .empty:
+                                Image(systemName: "globe")
+                                    .foregroundStyle(.secondary)
+                                    .imageScale(.medium)
+                            @unknown default:
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
                         }
+                        .frame(width: 20, height: 20)
                     }
                     .scaleEffect(isFaviconHovered ? 1.2 : 1.0)  // Scale to 1.2x on hover
                     .shadow(
