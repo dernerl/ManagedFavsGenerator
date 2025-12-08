@@ -1,6 +1,7 @@
 # Managed Favs Generator
 
 A native macOS app to generate Microsoft Edge Managed Favorites configuration files for enterprise deployment via Group Policy (GPO) and Microsoft Intune.
+All code come from Atlassian Rovo Dev (anthropic.claude-sonnet-4-5-20250929-v1:0)
 
 ## 🎯 What Does It Do?
 
@@ -321,10 +322,6 @@ For developers and technical documentation, see **[AGENTS.md](../AGENTS.md)** - 
 ### Group Policy
 - [Group Policy Overview](https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-r2-and-2012/hh831791(v=ws.11))
 - [Administrative Templates for Microsoft Edge](https://www.microsoft.com/en-us/edge/business/download)
-
-## 📄 License
-
-[Add your license here]
 
 ## 🤝 Contributing
 
