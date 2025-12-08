@@ -9,6 +9,39 @@ struct ContentView: View {
     @State private var viewModel = FavoritesViewModel()
     @Environment(\.openWindow) private var openWindow
     
+    /// Root level items (no parent)
+    private var rootLevelItems: [Favorite] {
+        favorites.filter { $0.parentID == nil }.sorted { $0.order < $1.order }
+    }
+    
+    /// Get children of a folder
+    private func childrenOf(_ folder: Favorite) -> [Favorite] {
+        favorites.filter { $0.parentID == folder.id }.sorted { $0.order < $1.order }
+    }
+    
+    /// Handle drop operation
+    private func handleDrop(droppedIds: [String], toParent parentID: UUID?, atIndex index: Int) {
+        guard let droppedId = droppedIds.first,
+              let droppedUUID = UUID(uuidString: droppedId),
+              let favorite = favorites.first(where: { $0.id == droppedUUID }) else {
+            return
+        }
+        
+        // Don't allow dropping a folder into itself
+        if let parentID = parentID, parentID == favorite.id {
+            return
+        }
+        
+        // Don't allow dropping folders into other folders (only 1 level deep)
+        if favorite.isFolder && parentID != nil {
+            return
+        }
+        
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            viewModel.moveFavorite(favorite, toParent: parentID, atIndex: index, allFavorites: favorites)
+        }
+    }
+    
     var body: some View {
         ZStack {
             // Hidden helper view um First Responder zu aktivieren
@@ -39,6 +72,17 @@ struct ContentView: View {
                 .buttonStyle(.borderedProminent)
                 .keyboardShortcut("n", modifiers: [.command])
                 .help("Add a new favorite (⌘N)")
+                
+                // Add Folder
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        viewModel.addFolder()
+                    }
+                } label: {
+                    Label("Add Folder", systemImage: "folder.badge.plus")
+                }
+                .keyboardShortcut("n", modifiers: [.command, .shift])
+                .help("Add a new folder (⌘⇧N)")
                 
                 Divider()
                 
@@ -101,37 +145,113 @@ struct ContentView: View {
     private var inputSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             
-            // Toplevel Name
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Toplevel Name")
-                    .font(.headline)
-                AppKitTextField(
-                    text: $viewModel.toplevelName,
-                    placeholder: "e.g., managedFavs"
-                )
-                .frame(height: 22)
-            }
-            
-            Divider()
-            
             // Favorites List
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Favorites")
-                    .font(.headline)
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Favorites")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    Text("Add and organize your favorites")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
                 
                 ScrollView {
                     VStack(spacing: 12) {
-                        ForEach(favorites) { favorite in
-                            FavoriteRowView(
-                                favorite: favorite,
-                                onRemove: { 
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                        viewModel.removeFavorite(favorite)
+                        // Drop zone BEFORE first root item (always visible)
+                        Color.clear
+                            .frame(height: 20)
+                            .dropDestination(for: String.self) { droppedIds, location in
+                                handleDrop(droppedIds: droppedIds, toParent: nil, atIndex: 0)
+                                return true
+                            }
+                        
+                        // Root level items (no parent)
+                        ForEach(Array(rootLevelItems.enumerated()), id: \.element.id) { index, item in
+                            if item.isFolder {
+                                // Folder with children
+                                VStack(spacing: 0) {
+                                    DisclosureGroup {
+                                        VStack(spacing: 12) {
+                                            // Drop zone at START of folder (for first position)
+                                            Color.clear
+                                                .frame(height: 20)
+                                                .dropDestination(for: String.self) { droppedIds, location in
+                                                    handleDrop(droppedIds: droppedIds, toParent: item.id, atIndex: 0)
+                                                    return true
+                                                }
+                                            
+                                            ForEach(Array(childrenOf(item).enumerated()), id: \.element.id) { childIndex, child in
+                                                FavoriteRowView(
+                                                    favorite: child,
+                                                    onRemove: {
+                                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                                            viewModel.removeFavorite(child)
+                                                        }
+                                                    }
+                                                )
+                                                .padding(.leading, 16)
+                                                .transition(.scale.combined(with: .opacity))
+                                                .dropDestination(for: String.self) { droppedIds, location in
+                                                    // Drop AFTER this child
+                                                    handleDrop(droppedIds: droppedIds, toParent: item.id, atIndex: childIndex + 1)
+                                                    return true
+                                                }
+                                            }
+                                            
+                                            // Drop zone at END of folder (when folder is empty or after last item)
+                                            if childrenOf(item).isEmpty {
+                                                Color.clear
+                                                    .frame(height: 40)
+                                                    .dropDestination(for: String.self) { droppedIds, location in
+                                                        handleDrop(droppedIds: droppedIds, toParent: item.id, atIndex: 0)
+                                                        return true
+                                                    }
+                                            }
+                                        }
+                                    } label: {
+                                        FolderRowView(
+                                            folder: item,
+                                            onRemove: {
+                                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                                    viewModel.removeFavorite(item)
+                                                }
+                                            },
+                                            onAddChild: {
+                                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                                    viewModel.addFavorite(parentID: item.id)
+                                                }
+                                            }
+                                        )
                                     }
+                                    .disclosureGroupStyle(.automatic)
                                 }
-                            )
-                            .transition(.scale.combined(with: .opacity))
+                            } else {
+                                // Regular favorite
+                                FavoriteRowView(
+                                    favorite: item,
+                                    onRemove: {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                            viewModel.removeFavorite(item)
+                                        }
+                                    }
+                                )
+                                .transition(.scale.combined(with: .opacity))
+                                .dropDestination(for: String.self) { droppedIds, location in
+                                    // Drop after this favorite
+                                    handleDrop(droppedIds: droppedIds, toParent: nil, atIndex: index + 1)
+                                    return true
+                                }
+                            }
                         }
+                        
+                        // Drop zone at end of root level
+                        Color.clear
+                            .frame(height: 40)
+                            .dropDestination(for: String.self) { droppedIds, location in
+                                handleDrop(droppedIds: droppedIds, toParent: nil, atIndex: rootLevelItems.count)
+                                return true
+                            }
                     }
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: favorites.count)
                 }
@@ -224,11 +344,13 @@ struct FavoriteRowView: View {
     @Bindable var favorite: Favorite
     let onRemove: () -> Void
     @State private var isHovering = false
+    @State private var isDragging = false
     
     /// Generates the favicon URL using Google's favicon service
     private var faviconURL: URL? {
-        guard !favorite.url.isEmpty,
-              let url = URL(string: favorite.url),
+        guard let urlString = favorite.url,
+              !urlString.isEmpty,
+              let url = URL(string: urlString),
               let domain = url.host else {
             return nil
         }
@@ -286,7 +408,10 @@ struct FavoriteRowView: View {
             .frame(height: 22)
             
             AppKitTextField(
-                text: $favorite.url,
+                text: Binding(
+                    get: { favorite.url ?? "" },
+                    set: { favorite.url = $0.isEmpty ? nil : $0 }
+                ),
                 placeholder: "URL"
             )
             .frame(height: 22)
@@ -295,9 +420,33 @@ struct FavoriteRowView: View {
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
         .shadow(color: .black.opacity(isHovering ? 0.12 : 0.08), radius: isHovering ? 12 : 8, y: isHovering ? 6 : 4)
         .scaleEffect(isHovering ? 1.01 : 1.0)
+        .opacity(isDragging ? 0.5 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHovering)
+        .animation(.easeInOut(duration: 0.2), value: isDragging)
         .onHover { hovering in
             isHovering = hovering
+        }
+        .draggable(favorite.id.uuidString) {
+            // Drag preview
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Image(systemName: "star.fill")
+                        .foregroundStyle(.yellow)
+                    Text(favorite.name)
+                        .font(.headline)
+                }
+                if let url = favorite.url {
+                    Text(url)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            .padding(12)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+            .shadow(radius: 8)
+            .onAppear { isDragging = true }
+            .onDisappear { isDragging = false }
         }
     }
 }

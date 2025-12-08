@@ -45,18 +45,37 @@ class FavoritesViewModel {
     
     // MARK: - Business Logic
     
-    func addFavorite() {
+    func addFavorite(parentID: UUID? = nil) {
         guard let modelContext = modelContext else {
             logger.error("ModelContext nicht verfügbar")
             return
         }
         
-        let favorite = Favorite()
+        let favorite = Favorite(parentID: parentID)
         modelContext.insert(favorite)
         
         do {
             try modelContext.save()
             logger.info("Favorit hinzugefügt und gespeichert")
+        } catch {
+            logger.error("Fehler beim Speichern: \(error.localizedDescription)")
+            handleError(error)
+        }
+    }
+    
+    func addFolder() {
+        guard let modelContext = modelContext else {
+            logger.error("ModelContext nicht verfügbar")
+            return
+        }
+        
+        // Folder = Favorite with url = nil
+        let folder = Favorite(name: "New Folder", url: nil)
+        modelContext.insert(folder)
+        
+        do {
+            try modelContext.save()
+            logger.info("Ordner hinzugefügt und gespeichert")
         } catch {
             logger.error("Fehler beim Speichern: \(error.localizedDescription)")
             handleError(error)
@@ -76,6 +95,41 @@ class FavoritesViewModel {
             logger.info("Favorit entfernt")
         } catch {
             logger.error("Fehler beim Löschen: \(error.localizedDescription)")
+            handleError(error)
+        }
+    }
+    
+    // MARK: - Drag & Drop
+    
+    func moveFavorite(_ favorite: Favorite, toParent newParentID: UUID?, atIndex index: Int, allFavorites: [Favorite]) {
+        guard let modelContext = modelContext else {
+            logger.error("ModelContext nicht verfügbar")
+            return
+        }
+        
+        // Update parentID
+        favorite.parentID = newParentID
+        
+        // Reorder siblings at target location
+        let siblings = allFavorites
+            .filter { $0.parentID == newParentID && $0.id != favorite.id }
+            .sorted { $0.order < $1.order }
+        
+        // Insert at new position
+        var reorderedSiblings = siblings
+        let targetIndex = min(index, reorderedSiblings.count)
+        reorderedSiblings.insert(favorite, at: targetIndex)
+        
+        // Update order values
+        for (idx, item) in reorderedSiblings.enumerated() {
+            item.order = idx
+        }
+        
+        do {
+            try modelContext.save()
+            logger.info("Favorit verschoben: parentID=\(newParentID?.uuidString ?? "root"), order=\(favorite.order)")
+        } catch {
+            logger.error("Fehler beim Verschieben: \(error.localizedDescription)")
             handleError(error)
         }
     }
