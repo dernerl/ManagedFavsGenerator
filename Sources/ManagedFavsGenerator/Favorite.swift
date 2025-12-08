@@ -9,7 +9,7 @@ final class Favorite {
     var name: String
     var url: String?        // nil = Folder, String = Favorite
     var parentID: UUID?     // nil = Root level, UUID = Inside folder
-    var order: Int          // For sorting within same level
+    var order: Int = 0      // For sorting within same level (default: 0)
     var createdAt: Date
     
     /// Computed property to check if this is a folder

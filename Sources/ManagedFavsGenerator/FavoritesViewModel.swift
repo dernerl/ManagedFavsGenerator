@@ -99,6 +99,41 @@ class FavoritesViewModel {
         }
     }
     
+    // MARK: - Drag & Drop
+    
+    func moveFavorite(_ favorite: Favorite, toParent newParentID: UUID?, atIndex index: Int, allFavorites: [Favorite]) {
+        guard let modelContext = modelContext else {
+            logger.error("ModelContext nicht verfügbar")
+            return
+        }
+        
+        // Update parentID
+        favorite.parentID = newParentID
+        
+        // Reorder siblings at target location
+        let siblings = allFavorites
+            .filter { $0.parentID == newParentID && $0.id != favorite.id }
+            .sorted { $0.order < $1.order }
+        
+        // Insert at new position
+        var reorderedSiblings = siblings
+        let targetIndex = min(index, reorderedSiblings.count)
+        reorderedSiblings.insert(favorite, at: targetIndex)
+        
+        // Update order values
+        for (idx, item) in reorderedSiblings.enumerated() {
+            item.order = idx
+        }
+        
+        do {
+            try modelContext.save()
+            logger.info("Favorit verschoben: parentID=\(newParentID?.uuidString ?? "root"), order=\(favorite.order)")
+        } catch {
+            logger.error("Fehler beim Verschieben: \(error.localizedDescription)")
+            handleError(error)
+        }
+    }
+    
     func copyToClipboard(_ text: String) {
         do {
             try clipboardService.copyToClipboard(text)

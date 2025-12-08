@@ -43,6 +43,14 @@ struct AppKitTextField: NSViewRepresentable {
         // KRITISCH: TextField muss explizit First Responder werden können
         textField.refusesFirstResponder = false
         
+        // WICHTIG: Komplett deaktiviere Drag & Drop für dieses TextField
+        textField.unregisterDraggedTypes()
+        
+        // Disable text field's cell from accepting drops
+        if let cell = textField.cell as? NSTextFieldCell {
+            cell.isScrollable = true
+        }
+        
         return textField
     }
     
@@ -96,15 +104,43 @@ struct AppKitTextField: NSViewRepresentable {
 /// - Explizites `acceptsFirstResponder = true`
 /// - Automatische Window-Aktivierung beim Focus-Wechsel
 /// - Window-Aktivierung beim Hinzufügen zur View-Hierarchie
+/// - Blockiert Drag & Drop Operations komplett durch eigenen Field Editor
 private class KeyboardReceivingTextField: NSTextField {
     override var acceptsFirstResponder: Bool { true }
     override var canBecomeKeyView: Bool { true }
     
+    // Custom field editor that never accepts drops
+    private lazy var customFieldEditor: NoDragTextView = {
+        let textContainer = NSTextContainer()
+        let editor = NoDragTextView(frame: .zero, textContainer: textContainer)
+        editor.isFieldEditor = true
+        editor.isRichText = false
+        editor.importsGraphics = false
+        editor.allowsUndo = true
+        editor.backgroundColor = .clear
+        editor.drawsBackground = false
+        return editor
+    }()
+    
     /// Stellt sicher, dass das Window key wird, wenn das TextField First Responder wird
     override func becomeFirstResponder() -> Bool {
-        let result = super.becomeFirstResponder()
+        // Get or create the window's field editor and disable drag & drop
+        if let window = self.window,
+           let fieldEditor = window.fieldEditor(true, for: self) as? NSTextView {
+            fieldEditor.unregisterDraggedTypes()
+            
+            // Permanently block re-registration
+            DispatchQueue.main.async {
+                fieldEditor.unregisterDraggedTypes()
+            }
+            
+            // Schedule periodic unregistration
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                fieldEditor.unregisterDraggedTypes()
+            }
+        }
         
-        // Sicherstellen, dass das Window auch key ist
+        let result = super.becomeFirstResponder()
         self.window?.makeKeyAndOrderFront(nil)
         
         return result
@@ -121,5 +157,88 @@ private class KeyboardReceivingTextField: NSTextField {
                 window.makeKeyAndOrderFront(nil)
             }
         }
+    }
+    
+    
+    // MARK: - Drag & Drop Protection
+    
+    /// Blockiert alle Drag Operations - kein visuelles Feedback
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        return []  // Reject all drags - no cursor feedback
+    }
+    
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        return []  // Reject all drags - no cursor feedback
+    }
+    
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        return false  // Never accept drops
+    }
+    
+    override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        return false  // Don't even prepare
+    }
+    
+    override func draggingExited(_ sender: NSDraggingInfo?) {
+        // Do nothing - ignore exit
+    }
+    
+    override func wantsPeriodicDraggingUpdates() -> Bool {
+        return false  // No periodic updates needed
+    }
+}
+
+/// Custom NSTextView that completely disables drag & drop
+private class NoDragTextView: NSTextView {
+    
+    override init(frame frameRect: NSRect, textContainer container: NSTextContainer?) {
+        super.init(frame: frameRect, textContainer: container)
+        setupNoDrag()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupNoDrag()
+    }
+    
+    private func setupNoDrag() {
+        // Never register any drag types
+        self.unregisterDraggedTypes()
+        
+        // Disable additional drag features
+        self.allowsImageEditing = false
+        self.isAutomaticQuoteSubstitutionEnabled = false
+        self.isAutomaticLinkDetectionEnabled = false
+    }
+    
+    // MARK: - Block all drag operations
+    
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        return []
+    }
+    
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        return []
+    }
+    
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        return false
+    }
+    
+    override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        return false
+    }
+    
+    override func wantsPeriodicDraggingUpdates() -> Bool {
+        return false
+    }
+    
+    override func draggingExited(_ sender: NSDraggingInfo?) {
+        // Do nothing
+    }
+    
+    // Prevent registering drag types
+    override func registerForDraggedTypes(_ newTypes: [NSPasteboard.PasteboardType]) {
+        // Do nothing - never register drag types
     }
 }

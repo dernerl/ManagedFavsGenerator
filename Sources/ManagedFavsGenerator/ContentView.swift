@@ -19,6 +19,29 @@ struct ContentView: View {
         favorites.filter { $0.parentID == folder.id }.sorted { $0.order < $1.order }
     }
     
+    /// Handle drop operation
+    private func handleDrop(droppedIds: [String], toParent parentID: UUID?, atIndex index: Int) {
+        guard let droppedId = droppedIds.first,
+              let droppedUUID = UUID(uuidString: droppedId),
+              let favorite = favorites.first(where: { $0.id == droppedUUID }) else {
+            return
+        }
+        
+        // Don't allow dropping a folder into itself
+        if let parentID = parentID, parentID == favorite.id {
+            return
+        }
+        
+        // Don't allow dropping folders into other folders (only 1 level deep)
+        if favorite.isFolder && parentID != nil {
+            return
+        }
+        
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            viewModel.moveFavorite(favorite, toParent: parentID, atIndex: index, allFavorites: favorites)
+        }
+    }
+    
     var body: some View {
         ZStack {
             // Hidden helper view um First Responder zu aktivieren
@@ -122,56 +145,87 @@ struct ContentView: View {
     private var inputSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             
-            // Toplevel Name
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Toplevel Name")
-                    .font(.headline)
-                AppKitTextField(
-                    text: $viewModel.toplevelName,
-                    placeholder: "e.g., managedFavs"
-                )
-                .frame(height: 22)
-            }
-            
-            Divider()
-            
             // Favorites List
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Favorites")
-                    .font(.headline)
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Favorites")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    Text("Add and organize your favorites")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
                 
                 ScrollView {
                     VStack(spacing: 12) {
+                        // Drop zone BEFORE first root item (always visible)
+                        Color.clear
+                            .frame(height: 20)
+                            .dropDestination(for: String.self) { droppedIds, location in
+                                handleDrop(droppedIds: droppedIds, toParent: nil, atIndex: 0)
+                                return true
+                            }
+                        
                         // Root level items (no parent)
-                        ForEach(rootLevelItems) { item in
+                        ForEach(Array(rootLevelItems.enumerated()), id: \.element.id) { index, item in
                             if item.isFolder {
                                 // Folder with children
-                                DisclosureGroup {
-                                    VStack(spacing: 12) {
-                                        ForEach(childrenOf(item)) { child in
-                                            FavoriteRowView(
-                                                favorite: child,
-                                                onRemove: {
-                                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                                        viewModel.removeFavorite(child)
-                                                    }
+                                VStack(spacing: 0) {
+                                    DisclosureGroup {
+                                        VStack(spacing: 12) {
+                                            // Drop zone at START of folder (for first position)
+                                            Color.clear
+                                                .frame(height: 20)
+                                                .dropDestination(for: String.self) { droppedIds, location in
+                                                    handleDrop(droppedIds: droppedIds, toParent: item.id, atIndex: 0)
+                                                    return true
                                                 }
-                                            )
-                                            .padding(.leading, 16)
-                                            .transition(.scale.combined(with: .opacity))
-                                        }
-                                    }
-                                } label: {
-                                    FolderRowView(
-                                        folder: item,
-                                        onRemove: {
-                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                                viewModel.removeFavorite(item)
+                                            
+                                            ForEach(Array(childrenOf(item).enumerated()), id: \.element.id) { childIndex, child in
+                                                FavoriteRowView(
+                                                    favorite: child,
+                                                    onRemove: {
+                                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                                            viewModel.removeFavorite(child)
+                                                        }
+                                                    }
+                                                )
+                                                .padding(.leading, 16)
+                                                .transition(.scale.combined(with: .opacity))
+                                                .dropDestination(for: String.self) { droppedIds, location in
+                                                    // Drop AFTER this child
+                                                    handleDrop(droppedIds: droppedIds, toParent: item.id, atIndex: childIndex + 1)
+                                                    return true
+                                                }
+                                            }
+                                            
+                                            // Drop zone at END of folder (when folder is empty or after last item)
+                                            if childrenOf(item).isEmpty {
+                                                Color.clear
+                                                    .frame(height: 40)
+                                                    .dropDestination(for: String.self) { droppedIds, location in
+                                                        handleDrop(droppedIds: droppedIds, toParent: item.id, atIndex: 0)
+                                                        return true
+                                                    }
                                             }
                                         }
-                                    )
+                                    } label: {
+                                        FolderRowView(
+                                            folder: item,
+                                            onRemove: {
+                                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                                    viewModel.removeFavorite(item)
+                                                }
+                                            },
+                                            onAddChild: {
+                                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                                    viewModel.addFavorite(parentID: item.id)
+                                                }
+                                            }
+                                        )
+                                    }
+                                    .disclosureGroupStyle(.automatic)
                                 }
-                                .disclosureGroupStyle(.automatic)
                             } else {
                                 // Regular favorite
                                 FavoriteRowView(
@@ -183,8 +237,21 @@ struct ContentView: View {
                                     }
                                 )
                                 .transition(.scale.combined(with: .opacity))
+                                .dropDestination(for: String.self) { droppedIds, location in
+                                    // Drop after this favorite
+                                    handleDrop(droppedIds: droppedIds, toParent: nil, atIndex: index + 1)
+                                    return true
+                                }
                             }
                         }
+                        
+                        // Drop zone at end of root level
+                        Color.clear
+                            .frame(height: 40)
+                            .dropDestination(for: String.self) { droppedIds, location in
+                                handleDrop(droppedIds: droppedIds, toParent: nil, atIndex: rootLevelItems.count)
+                                return true
+                            }
                     }
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: favorites.count)
                 }
@@ -277,6 +344,7 @@ struct FavoriteRowView: View {
     @Bindable var favorite: Favorite
     let onRemove: () -> Void
     @State private var isHovering = false
+    @State private var isDragging = false
     
     /// Generates the favicon URL using Google's favicon service
     private var faviconURL: URL? {
@@ -352,9 +420,33 @@ struct FavoriteRowView: View {
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
         .shadow(color: .black.opacity(isHovering ? 0.12 : 0.08), radius: isHovering ? 12 : 8, y: isHovering ? 6 : 4)
         .scaleEffect(isHovering ? 1.01 : 1.0)
+        .opacity(isDragging ? 0.5 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHovering)
+        .animation(.easeInOut(duration: 0.2), value: isDragging)
         .onHover { hovering in
             isHovering = hovering
+        }
+        .draggable(favorite.id.uuidString) {
+            // Drag preview
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Image(systemName: "star.fill")
+                        .foregroundStyle(.yellow)
+                    Text(favorite.name)
+                        .font(.headline)
+                }
+                if let url = favorite.url {
+                    Text(url)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            .padding(12)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+            .shadow(radius: 8)
+            .onAppear { isDragging = true }
+            .onDisappear { isDragging = false }
         }
     }
 }

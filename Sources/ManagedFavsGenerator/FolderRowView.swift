@@ -4,6 +4,7 @@ import SwiftUI
 struct FolderRowView: View {
     @Bindable var folder: Favorite
     let onRemove: () -> Void
+    let onAddChild: () -> Void
     @State private var isHovering = false
     
     var body: some View {
@@ -25,6 +26,16 @@ struct FolderRowView: View {
                 }
                 
                 Spacer()
+                
+                // Add to Folder Button
+                Button(action: onAddChild) {
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundStyle(.blue)
+                        .imageScale(.medium)
+                }
+                .buttonStyle(.plain)
+                .opacity(isHovering ? 1.0 : 0.6)
+                .help("Add favorite to this folder")
                 
                 Button(action: onRemove) {
                     Image(systemName: "trash")
