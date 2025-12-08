@@ -1,6 +1,7 @@
 # Contributing to Managed Favs Generator
 
 Thank you for your interest in contributing! 🎉
+As I am new to github and all the stuff, their maybe false instruction or no best practice. I'm open for tipps :-)
 
 ## Code of Conduct
 
@@ -11,7 +12,7 @@ Be respectful and constructive. This is a professional tool for IT administrator
 ### Reporting Bugs
 
 1. **Check existing issues** to avoid duplicates
-2. **Use the issue template** (if available)
+2. **Use the bug template** 
 3. **Include details**:
    - macOS version
    - Steps to reproduce
@@ -20,7 +21,8 @@ Be respectful and constructive. This is a professional tool for IT administrator
 
 ### Suggesting Features
 
-1. **Open an issue** with the `enhancement` label
+1. **Check existing issues** to avoid duplicates
+2. **Use the feature template** 
 2. **Describe the use case** - Why would IT admins need this?
 3. **Provide examples** - How would it work?
 
@@ -28,7 +30,6 @@ Be respectful and constructive. This is a professional tool for IT administrator
 
 1. **Fork the repository**
 2. **Create a feature branch**: `git checkout -b feature/my-feature`
-3. **Follow the code style** (see AGENTS.md)
 4. **Write tests** if applicable
 5. **Update documentation** if needed
 6. **Commit with clear messages**:
