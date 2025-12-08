@@ -185,7 +185,8 @@ class FavoritesViewModel {
     
     // MARK: - Import
     
-    func importConfiguration(replaceAll: Bool = true) async {
+    /// Import Plist file via file picker
+    func importPlistFile(replaceAll: Bool = true) async {
         do {
             // Datei auswählen
             guard let fileURL = try await importService.selectFileForImport() else {
@@ -193,43 +194,72 @@ class FavoritesViewModel {
                 return
             }
             
+            // Nur Plist erlauben
+            guard fileURL.pathExtension.lowercased() == "plist" else {
+                throw AppError.importUnsupportedFormat(fileURL.pathExtension)
+            }
+            
             // Datei parsen
             let parsedConfig = try FormatParser.parse(fileURL: fileURL)
             
-            logger.info("Import gestartet: \(parsedConfig.favorites.count) Items, replaceAll=\(replaceAll)")
+            // Import durchführen
+            try await performImport(parsedConfig: parsedConfig, replaceAll: replaceAll)
             
-            guard let modelContext = modelContext else {
-                logger.error("ModelContext nicht verfügbar")
-                return
-            }
-            
-            // Option 1: Alles ersetzen (Delete all existing)
-            if replaceAll {
-                // Delete all existing favorites
-                let fetchDescriptor = FetchDescriptor<Favorite>()
-                let existingFavorites = try modelContext.fetch(fetchDescriptor)
-                
-                for favorite in existingFavorites {
-                    modelContext.delete(favorite)
-                }
-                
-                logger.info("Bestehende Favoriten gelöscht: \(existingFavorites.count)")
-            }
-            
-            // Import parsed favorites
-            importParsedFavorites(parsedConfig.favorites, parentID: nil, modelContext: modelContext)
-            
-            // Update toplevelName
-            self.toplevelName = parsedConfig.toplevelName
-            
-            // Save to database
-            try modelContext.save()
-            
-            logger.info("Import erfolgreich abgeschlossen: \(parsedConfig.favorites.count) Items importiert")
+            logger.info("Plist Import erfolgreich: \(parsedConfig.favorites.count) Items")
             
         } catch {
             handleError(error)
         }
+    }
+    
+    /// Import JSON from string (copy/paste)
+    func importJSONString(_ jsonString: String, replaceAll: Bool = true) async {
+        do {
+            // Parse JSON string
+            let parsedConfig = try FormatParser.parseJSONString(jsonString)
+            
+            // Import durchführen
+            try await performImport(parsedConfig: parsedConfig, replaceAll: replaceAll)
+            
+            logger.info("JSON Import erfolgreich: \(parsedConfig.favorites.count) Items")
+            
+        } catch {
+            handleError(error)
+        }
+    }
+    
+    /// Shared import logic
+    private func performImport(parsedConfig: ParsedConfiguration, replaceAll: Bool) async throws {
+        logger.info("Import gestartet: \(parsedConfig.favorites.count) Items, replaceAll=\(replaceAll)")
+        
+        guard let modelContext = modelContext else {
+            logger.error("ModelContext nicht verfügbar")
+            return
+        }
+        
+        // Option 1: Alles ersetzen (Delete all existing)
+        if replaceAll {
+            // Delete all existing favorites
+            let fetchDescriptor = FetchDescriptor<Favorite>()
+            let existingFavorites = try modelContext.fetch(fetchDescriptor)
+            
+            for favorite in existingFavorites {
+                modelContext.delete(favorite)
+            }
+            
+            logger.info("Bestehende Favoriten gelöscht: \(existingFavorites.count)")
+        }
+        
+        // Import parsed favorites
+        importParsedFavorites(parsedConfig.favorites, parentID: nil, modelContext: modelContext)
+        
+        // Update toplevelName
+        self.toplevelName = parsedConfig.toplevelName
+        
+        // Save to database
+        try modelContext.save()
+        
+        logger.info("Import erfolgreich abgeschlossen: \(parsedConfig.favorites.count) Items importiert")
     }
     
     /// Rekursiv Favoriten importieren (unterstützt Ordner)

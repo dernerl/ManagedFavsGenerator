@@ -34,6 +34,14 @@ enum FormatParser {
         }
     }
     
+    /// Parse JSON from string (for copy/paste)
+    static func parseJSONString(_ jsonString: String) throws -> ParsedConfiguration {
+        guard let data = jsonString.data(using: .utf8) else {
+            throw AppError.importInvalidFormat("JSON-String konnte nicht in Data konvertiert werden")
+        }
+        return try parseJSON(data: data)
+    }
+    
     // MARK: - JSON Parser
     
     private static func parseJSON(data: Data) throws -> ParsedConfiguration {
@@ -106,12 +114,50 @@ enum FormatParser {
     // MARK: - Plist Parser
     
     private static func parsePlist(data: Data) throws -> ParsedConfiguration {
-        guard let plist = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else {
-            throw AppError.importInvalidFormat("Plist muss ein Dictionary sein")
+        // Try to parse the plist, but if it's a fragment (no XML header), wrap it
+        var plistData = data
+        
+        // Check if data starts with valid plist header
+        if let dataString = String(data: data, encoding: .utf8),
+           !dataString.hasPrefix("<?xml") && !dataString.hasPrefix("bplist") {
+            // Fragment detected - wrap it in proper plist structure
+            logger.info("Plist Fragment detected - wrapping in proper structure")
+            
+            let wrappedPlist = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+            \(dataString)
+            </dict>
+            </plist>
+            """
+            
+            guard let wrappedData = wrappedPlist.data(using: .utf8) else {
+                throw AppError.importInvalidFormat("Konnte Plist-Fragment nicht wrappen")
+            }
+            
+            plistData = wrappedData
         }
         
-        guard let managedFavorites = plist["ManagedFavorites"] as? [[String: Any]] else {
-            throw AppError.importInvalidFormat("Plist muss 'ManagedFavorites' Array enthalten")
+        let plistObject = try PropertyListSerialization.propertyList(from: plistData, format: nil)
+        
+        // Try to get ManagedFavorites array
+        // Option 1: Full plist with dictionary structure { "ManagedFavorites": [...] }
+        // Option 2: Fragment plist (direct array) - common in Intune exports
+        let managedFavorites: [[String: Any]]
+        
+        if let plistDict = plistObject as? [String: Any],
+           let favorites = plistDict["ManagedFavorites"] as? [[String: Any]] {
+            // Full plist format
+            managedFavorites = favorites
+            logger.info("Plist Format: Full dictionary with ManagedFavorites key")
+        } else if let favorites = plistObject as? [[String: Any]] {
+            // Fragment format (direct array)
+            managedFavorites = favorites
+            logger.info("Plist Format: Fragment (direct array)")
+        } else {
+            throw AppError.importInvalidFormat("Plist muss entweder ein Dictionary mit 'ManagedFavorites' Key oder ein direktes Array sein")
         }
         
         guard !managedFavorites.isEmpty else {
