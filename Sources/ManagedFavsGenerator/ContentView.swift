@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import OSLog
 import AppKit
 
 struct ContentView: View {
@@ -347,6 +348,8 @@ struct FavoriteRowView: View {
     @State private var isDragging = false
     @AppStorage("faviconProvider") private var faviconProvider: FaviconProvider = .google
     
+    private let logger = Logger(subsystem: "ManagedFavsGenerator", category: "Favicons")
+    
     /// Generates the favicon URL using the selected provider
     private var faviconURL: URL? {
         guard let urlString = favorite.url,
@@ -358,7 +361,12 @@ struct FavoriteRowView: View {
         
         // Remove www. prefix if present
         let domain = host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
-        return faviconProvider.faviconURL(for: domain)
+        let faviconURL = faviconProvider.faviconURL(for: domain)
+        
+        // Log which provider is being used (public for debugging)
+        logger.info("Loading favicon for '\(domain, privacy: .public)' using \(faviconProvider.rawValue, privacy: .public) provider: \(faviconURL?.absoluteString ?? "nil", privacy: .public)")
+        
+        return faviconURL
     }
     
     var body: some View {
