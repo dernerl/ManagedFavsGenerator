@@ -30,7 +30,7 @@ struct ImportJSONView: View {
                 
                 TextEditor(text: $jsonText)
                     .font(.system(.body, design: .monospaced))
-                    .frame(minHeight: 300)
+                    .frame(height: 250)
                     .padding(8)
                     .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
                     .overlay(
@@ -65,7 +65,7 @@ struct ImportJSONView: View {
             .padding(.bottom)
         }
         .padding()
-        .frame(width: 600, height: 500)
+        .frame(width: 600, height: 480)
     }
 }
 
