@@ -87,6 +87,19 @@ struct ContentView: View {
                 
                 Divider()
                 
+                // Import Configuration
+                Button {
+                    Task {
+                        await viewModel.importConfiguration(replaceAll: true)
+                    }
+                } label: {
+                    Label("Import", systemImage: "square.and.arrow.down.on.square")
+                }
+                .keyboardShortcut("i", modifiers: [.command])
+                .help("Import JSON or Plist configuration (⌘I)")
+                
+                Divider()
+                
                 // Copy JSON
                 Button {
                     let json = FormatGenerator.generateJSON(

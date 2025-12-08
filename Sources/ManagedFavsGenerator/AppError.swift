@@ -6,6 +6,9 @@ enum AppError: LocalizedError {
     case clipboardAccessFailed
     case invalidURL(String)
     case emptyFavorites
+    case fileReadFailed(URL, underlyingError: Error)
+    case importInvalidFormat(String)
+    case importUnsupportedFormat(String)
     
     var errorDescription: String? {
         switch self {
@@ -17,6 +20,12 @@ enum AppError: LocalizedError {
             return "Ungültige URL: \(url)"
         case .emptyFavorites:
             return "Keine Favoriten zum Exportieren vorhanden"
+        case .fileReadFailed(let url, let error):
+            return "Datei konnte nicht gelesen werden: \(url.lastPathComponent)\nFehler: \(error.localizedDescription)"
+        case .importInvalidFormat(let details):
+            return "Ungültiges Dateiformat: \(details)"
+        case .importUnsupportedFormat(let ext):
+            return "Nicht unterstütztes Dateiformat: .\(ext)"
         }
     }
     
@@ -30,6 +39,12 @@ enum AppError: LocalizedError {
             return "Geben Sie eine gültige URL ein (z.B. https://example.com)"
         case .emptyFavorites:
             return "Fügen Sie mindestens einen Favoriten hinzu."
+        case .fileReadFailed:
+            return "Überprüfen Sie die Leserechte und versuchen Sie es erneut."
+        case .importInvalidFormat:
+            return "Stellen Sie sicher, dass die Datei eine gültige Microsoft Edge Managed Favorites Konfiguration ist."
+        case .importUnsupportedFormat:
+            return "Nur JSON (.json) und Plist (.plist) Dateien werden unterstützt."
         }
     }
 }
