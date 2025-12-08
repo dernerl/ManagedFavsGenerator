@@ -135,7 +135,39 @@ Press **⌘N** or click the **Add Favorite** button in the toolbar:
 - **Name**: Display name (e.g., "Company Portal")
 - **URL**: Full URL including `https://`
 
-### 2. **Generate Outputs**
+**Add Folders** (⌘⇧N) to organize favorites hierarchically.
+
+### 2. **Import Existing Configuration** ⭐ NEW
+
+Import existing configurations from other sources or backups:
+
+#### **JSON Import (Copy/Paste)** - ⌘I
+- Click **Import JSON** or press **⌘I**
+- Dialog opens with text editor
+- Paste your JSON configuration
+- Click **Import**
+- Perfect for quick imports, testing, or snippets
+
+#### **Plist Import (File Selection)** - ⌘⇧I
+- Click **Import Plist** or press **⌘⇧I**
+- Select `.plist` file from your system
+- Supports full Plist files and Intune fragments
+- Automatically handles files without XML headers
+
+**Features:**
+- ✅ Replaces all existing favorites
+- ✅ Preserves folder structure
+- ✅ Extracts toplevel name
+- ✅ Validates format before import
+
+**Use Cases:**
+- Migrate existing Edge favorites configuration
+- Share configurations between teams
+- Backup and restore your favorites
+- Import from other management tools
+- Test configurations before deployment
+
+### 3. **Generate Outputs**
 
 The app automatically generates two formats as you add favorites:
 
@@ -149,11 +181,11 @@ The app automatically generates two formats as you add favorites:
 - Press **⌘S** to export as file
 - Or click Copy to copy to clipboard
 
-### 3. **Configure Toplevel Name**
+### 4. **Configure Toplevel Name**
 
 The toplevel name (default: `managedFavs`) is the root key in your configuration. Change it in Settings (⌘,) if needed.
 
-### 4. **Deploy to Your Organization**
+### 5. **Deploy to Your Organization**
 
 See deployment guides below for Windows GPO, Intune Windows, or Intune macOS.
 

@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2024-12-XX
+
+### Added
+- **Import Configuration** - Import existing JSON and Plist configurations (#8)
+  - **JSON Import via Copy/Paste** (⌘I)
+    - New ImportJSONView with TextEditor
+    - Paste JSON directly into dialog
+    - Perfect for quick imports and snippets
+  - **Plist Import via File Selection** (⌘⇧I)
+    - NSOpenPanel for file selection
+    - Supports full Plist files and fragments
+    - Auto-wraps Intune export fragments (no XML header)
+  - Automatic format detection
+  - Replace all existing favorites on import
+  - Folder structure preservation (children arrays)
+  - Toplevel name extraction and update
+  - Two separate toolbar buttons with keyboard shortcuts
+
+### Fixed
+- **Plist Fragment Support** - Handle Plist files without XML headers
+  - Common in Intune Configuration Profile exports
+  - Auto-wrap fragments in proper Plist structure
+  - Support both dictionary format and direct array format
+
+### Technical
+- New `ImportService` for file selection with NSOpenPanel
+- New `FormatParser` with dual parsing methods:
+  - `parse(fileURL:)` - For file-based imports (Plist)
+  - `parseJSONString(_:)` - For string-based imports (JSON)
+- New `ImportJSONView` - SwiftUI sheet for JSON paste dialog
+- Extended `AppError` with import-specific errors:
+  - `fileReadFailed` - File cannot be read
+  - `importInvalidFormat` - Invalid file structure
+  - `importUnsupportedFormat` - Unsupported file extension
+- Split ViewModel import logic:
+  - `importJSONString()` - JSON copy/paste handler
+  - `importPlistFile()` - Plist file handler
+  - `performImport()` - Shared import logic
+- `MockImportService` for unit testing
+- Plist fragment detection and wrapping
+- Recursive import for folder hierarchies
+
+### Changed
+- Import workflow split into two distinct methods (JSON vs Plist)
+- User experience optimized for different use cases
+
 ## [1.1.0] - 2024-12-07
 
 ### Added
