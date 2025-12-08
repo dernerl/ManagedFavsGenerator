@@ -376,6 +376,7 @@ struct FavoriteRowView: View {
     let onRemove: () -> Void
     @State private var isHovering = false
     @State private var isDragging = false
+    @State private var isFaviconHovered = false  // Separate hover state for favicon
     @AppStorage("faviconProvider") private var faviconProvider: FaviconProvider = .google
     
     private let logger = Logger(subsystem: "ManagedFavsGenerator", category: "Favicons")
@@ -404,24 +405,33 @@ struct FavoriteRowView: View {
             HStack {
                 // Favicon + Title
                 HStack(spacing: 8) {
-                    // Favicon
+                    // Favicon with hover effects
                     AsyncImage(url: faviconURL) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 20, height: 20)
-                        case .failure, .empty:
-                            Image(systemName: "globe")
-                                .foregroundStyle(.secondary)
-                                .frame(width: 20, height: 20)
-                                .imageScale(.medium)
-                        @unknown default:
-                            ProgressView()
-                                .controlSize(.small)
-                                .frame(width: 20, height: 20)
+                        Group {
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                            case .failure, .empty:
+                                Image(systemName: "globe")
+                                    .foregroundStyle(.secondary)
+                                    .imageScale(.medium)
+                            @unknown default:
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
                         }
+                        .frame(width: 20, height: 20)
+                    }
+                    .scaleEffect(isFaviconHovered ? 1.2 : 1.0)  // Scale to 1.2x on hover
+                    .shadow(
+                        color: isFaviconHovered ? .blue.opacity(0.3) : .clear,  // Glow effect
+                        radius: isFaviconHovered ? 4 : 0
+                    )
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFaviconHovered)  // Smooth spring animation
+                    .onHover { hovering in
+                        isFaviconHovered = hovering
                     }
                     
                     Label("Favorite", systemImage: "star.fill")
