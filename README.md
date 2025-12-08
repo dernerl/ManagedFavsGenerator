@@ -277,6 +277,32 @@ The app generates a complete macOS Configuration Profile with:
 - ✅ **Export fails**: Verify write permissions for target directory
 - ✅ **App won't start**: Ensure macOS 15+ and try rebuilding
 
+## 🔍 Debugging & Verification
+
+### Verify Favicon Provider
+
+You can verify which favicon provider (Google or DuckDuckGo) the app is using in real-time:
+
+```bash
+# Live stream of favicon loading logs
+log stream --predicate 'subsystem == "ManagedFavsGenerator" AND category == "Favicons"' --level info --style compact
+```
+
+**Example output:**
+```
+Loading favicon for 'github.com' using Google provider: https://www.google.com/s2/favicons?domain=github.com&sz=32
+Loading favicon for 'microsoft.com' using DuckDuckGo provider: https://icons.duckduckgo.com/ip3/microsoft.com.ico
+```
+
+**To change the provider:**
+1. Open Settings (⌘,)
+2. Navigate to **Appearance** section
+3. Select your preferred **Favicon Provider**:
+   - **Google**: More reliable, comprehensive coverage
+   - **DuckDuckGo**: Privacy-focused, no tracking
+
+Changes take effect immediately without restart.
+
 ## 🛠️ Technical Details
 
 For developers and technical documentation, see **[AGENTS.md](../AGENTS.md)** - Development guidelines, architecture, and best practices.
