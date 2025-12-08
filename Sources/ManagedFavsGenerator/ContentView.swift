@@ -345,16 +345,20 @@ struct FavoriteRowView: View {
     let onRemove: () -> Void
     @State private var isHovering = false
     @State private var isDragging = false
+    @AppStorage("faviconProvider") private var faviconProvider: FaviconProvider = .google
     
-    /// Generates the favicon URL using Google's favicon service
+    /// Generates the favicon URL using the selected provider
     private var faviconURL: URL? {
         guard let urlString = favorite.url,
               !urlString.isEmpty,
               let url = URL(string: urlString),
-              let domain = url.host else {
+              let host = url.host else {
             return nil
         }
-        return URL(string: "https://www.google.com/s2/favicons?domain=\(domain)&sz=32")
+        
+        // Remove www. prefix if present
+        let domain = host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+        return faviconProvider.faviconURL(for: domain)
     }
     
     var body: some View {

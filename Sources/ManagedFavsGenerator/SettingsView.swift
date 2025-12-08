@@ -3,6 +3,7 @@ import SwiftUI
 /// Settings View für App-Einstellungen
 struct SettingsView: View {
     @State private var viewModel = FavoritesViewModel()
+    @AppStorage("faviconProvider") private var faviconProvider: FaviconProvider = .google
     
     var body: some View {
         Form {
@@ -24,6 +25,30 @@ struct SettingsView: View {
             Divider()
             
             Section {
+                Picker("Favicon Provider", selection: $faviconProvider) {
+                    ForEach(FaviconProvider.allCases) { provider in
+                        Text(provider.displayName).tag(provider)
+                    }
+                }
+                .help("Choose which service to use for loading favicons")
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "info.circle")
+                            .foregroundStyle(.secondary)
+                            .imageScale(.small)
+                        Text(faviconProvider.description)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Text("Appearance")
+            }
+            
+            Divider()
+            
+            Section {
                 LabeledContent("Version") {
                     Text("1.1.0")
                         .foregroundStyle(.secondary)
@@ -38,7 +63,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 550, height: 300)
+        .frame(width: 550, height: 380)
     }
 }
 
