@@ -60,7 +60,27 @@ Or open `Package.swift` in Xcode and press ⌘R.
 
 Since this app is not notarized by Apple, macOS Gatekeeper will block it on first launch. You need to allow it manually.
 
-#### **Method 1: GUI (System Settings)**
+#### **Method 1: Terminal (Quick)**
+
+Remove the quarantine attribute to bypass Gatekeeper:
+
+```bash
+# Navigate to where you saved the app
+cd ~/Downloads
+
+# Remove quarantine flag
+xattr -cr ManagedFavsGenerator.app
+
+# Now open normally
+open ManagedFavsGenerator.app
+```
+
+**Explanation:**
+- `xattr` = Extended attributes tool
+- `-c` = Clear all attributes
+- `-r` = Recursive (for app bundles)
+
+#### **Method 2: GUI (System Settings)**
 
 1. Try to open `ManagedFavsGenerator.app`
 2. macOS shows: _"ManagedFavsGenerator.app can't be opened because it is from an unidentified developer"_
@@ -80,26 +100,6 @@ System Settings → Privacy & Security
 │ [Open Anyway]                           │
 └─────────────────────────────────────────┘
 ```
-
-#### **Method 2: Terminal (Quick)**
-
-Remove the quarantine attribute to bypass Gatekeeper:
-
-```bash
-# Navigate to where you saved the app
-cd ~/Downloads
-
-# Remove quarantine flag
-xattr -cr ManagedFavsGenerator.app
-
-# Now open normally
-open ManagedFavsGenerator.app
-```
-
-**Explanation:**
-- `xattr` = Extended attributes tool
-- `-c` = Clear all attributes
-- `-r` = Recursive (for app bundles)
 
 #### **Method 3: Right-Click (Alternative)**
 
