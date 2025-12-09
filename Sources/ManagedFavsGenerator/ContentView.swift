@@ -88,27 +88,19 @@ struct ContentView: View {
                 
                 Divider()
                 
+                // JSON Format Group
+                Text("JSON:")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+                
                 // Import JSON (Copy/Paste)
                 Button {
                     showImportJSON = true
                 } label: {
-                    Label("Import JSON", systemImage: "doc.text")
+                    Label("Import", systemImage: "square.and.arrow.down")
                 }
                 .keyboardShortcut("i", modifiers: [.command])
                 .help("Import JSON via Copy/Paste (⌘I)")
-                
-                // Import Plist (File)
-                Button {
-                    Task {
-                        await viewModel.importPlistFile(replaceAll: true)
-                    }
-                } label: {
-                    Label("Import Plist", systemImage: "doc.badge.arrow.up")
-                }
-                .keyboardShortcut("i", modifiers: [.command, .shift])
-                .help("Import Plist file (⌘⇧I)")
-                
-                Divider()
                 
                 // Copy JSON
                 Button {
@@ -118,11 +110,29 @@ struct ContentView: View {
                     )
                     viewModel.copyToClipboard(json)
                 } label: {
-                    Label("Copy JSON", systemImage: "doc.on.doc")
+                    Label("Copy", systemImage: "doc.on.doc")
                 }
                 .keyboardShortcut("c", modifiers: [.command, .shift])
                 .help("Copy JSON to clipboard (⌘⇧C)")
                 .disabled(favorites.isEmpty)
+                
+                Divider()
+                
+                // Plist Format Group
+                Text("Plist:")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+                
+                // Import Plist (File)
+                Button {
+                    Task {
+                        await viewModel.importPlistFile(replaceAll: true)
+                    }
+                } label: {
+                    Label("Import", systemImage: "square.and.arrow.down")
+                }
+                .keyboardShortcut("i", modifiers: [.command, .shift])
+                .help("Import Plist file (⌘⇧I)")
                 
                 // Export Plist
                 Button {
@@ -130,7 +140,7 @@ struct ContentView: View {
                         await viewModel.exportPlist(favorites: favorites)
                     }
                 } label: {
-                    Label("Export Plist", systemImage: "square.and.arrow.down")
+                    Label("Export", systemImage: "square.and.arrow.up")
                 }
                 .keyboardShortcut("s", modifiers: [.command])
                 .help("Export Plist file (⌘S)")
