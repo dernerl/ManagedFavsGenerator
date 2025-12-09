@@ -2,6 +2,10 @@
 
 A native macOS app to generate Microsoft Edge Managed Favorites configuration files for enterprise deployment via Group Policy (GPO) and Microsoft Intune.
 All code come from Atlassian Rovo Dev (anthropic.claude-sonnet-4-5-20250929-v1:0)
+<img width="1185" height="654" alt="image" src="https://github.com/user-attachments/assets/d0c26272-f577-44ee-8651-291afb68d25b" />
+
+<img width="680" height="262" alt="image" src="https://github.com/user-attachments/assets/054c9dfa-f9ad-43fb-88cb-27aae5d7cc02" />
+
 
 ## 🎯 What Does It Do?
 
@@ -131,18 +135,33 @@ cat checksums.txt
 ## 📖 How To Use
 
 ### 1. **Add Favorites**
+<img width="344" height="73" alt="image" src="https://github.com/user-attachments/assets/751075e3-8b0c-4776-8087-105daa42cb4f" />
 
 Press **⌘N** or click the **Add Favorite** button in the toolbar:
 - **Name**: Display name (e.g., "Company Portal")
 - **URL**: Full URL including `https://`
 
-**Add Folders** (⌘⇧N) to organize favorites hierarchically.
+**Add Folders**
 
-### 2. **Import Existing Configuration** ⭐ NEW
+<img width="329" height="68" alt="image" src="https://github.com/user-attachments/assets/3789c903-734d-4d95-a7f4-3ffcbe1eba4a" />
+
+Press **(⌘⇧N)** or click the **Add Folders** button to organize favorites hierarchically.
+<img width="467" height="250" alt="image" src="https://github.com/user-attachments/assets/f70e268d-995f-490a-9188-65b7f0f311d2" />
+
+
+### 2. **Move position by Drag and Drop
+
+<img width="235" height="143" alt="image" src="https://github.com/user-attachments/assets/bdcd796e-6eb1-4652-ab99-9217c8fad0eb" />
+
+
+
+### 2. **Import Existing Configuration** 
 
 Import existing configurations from other sources or backups:
 
 #### **JSON Import (Copy/Paste)** - ⌘I
+<img width="336" height="68" alt="image" src="https://github.com/user-attachments/assets/19fb6204-f558-490f-bf11-97db2324aa4a" />
+
 - Click **Import JSON** or press **⌘I**
 - Dialog opens with text editor
 - Paste your JSON configuration
@@ -150,23 +169,12 @@ Import existing configurations from other sources or backups:
 - Perfect for quick imports, testing, or snippets
 
 #### **Plist Import (File Selection)** - ⌘⇧I
+<img width="412" height="65" alt="image" src="https://github.com/user-attachments/assets/47ca89c5-650e-48c1-97e0-d7d66ad4fa7b" />
+
 - Click **Import Plist** or press **⌘⇧I**
 - Select `.plist` file from your system
 - Supports full Plist files and Intune fragments
 - Automatically handles files without XML headers
-
-**Features:**
-- ✅ Replaces all existing favorites
-- ✅ Preserves folder structure
-- ✅ Extracts toplevel name
-- ✅ Validates format before import
-
-**Use Cases:**
-- Migrate existing Edge favorites configuration
-- Share configurations between teams
-- Backup and restore your favorites
-- Import from other management tools
-- Test configurations before deployment
 
 ### 3. **Generate Outputs**
 
@@ -183,12 +191,18 @@ The app automatically generates two formats as you add favorites:
 - Or click Copy to copy to clipboard
 
 ### 4. **Configure Toplevel Name**
+<img width="519" height="111" alt="image" src="https://github.com/user-attachments/assets/0e1d3dd3-7e6d-4d4d-9a1e-43fc38cd872d" />
 
 The toplevel name (default: `managedFavs`) is the root key in your configuration. Change it in Settings (⌘,) if needed.
 
 ### 5. **Deploy to Your Organization**
 
 See deployment guides below for Windows GPO, Intune Windows, or Intune macOS.
+
+### 6. **Choose Favicon Provider
+<img width="605" height="108" alt="image" src="https://github.com/user-attachments/assets/9b560300-c968-4042-b9f5-94e9a0bb6515" />
+
+Favicons load automatically when URL is entered. Display favicons next to favorite entries to make them visually recognizable.
 
 ## 🏢 Deployment Scenarios
 
@@ -213,6 +227,7 @@ See deployment guides below for Windows GPO, Intune Windows, or Intune macOS.
 ### Windows - Intune Settings Catalog
 
 **For cloud-managed Windows devices:**
+<img width="756" height="304" alt="image" src="https://github.com/user-attachments/assets/e662be35-d211-4dff-a56d-6d1b832fa46e" />
 
 1. Copy the **JSON output** from the app
 2. In **Microsoft Intune admin center**: `Devices → Configuration profiles`
