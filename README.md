@@ -361,6 +361,7 @@ For developers and technical documentation, see **[AGENTS.md](../AGENTS.md)** - 
 - [Microsoft Edge Enterprise landing page](https://www.microsoft.com/edge/business)
 - [Microsoft Edge for Business](https://docs.microsoft.com/en-us/deployedge/)
 - [Microsoft Edge Policy documentation](https://docs.microsoft.com/en-us/deployedge/microsoft-edge-policies)
+- [Microsoft Edge - managed Favorites](https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/managedfavorites)
 
 ### Microsoft Intune
 - [Microsoft Intune documentation](https://docs.microsoft.com/en-us/mem/intune/)
