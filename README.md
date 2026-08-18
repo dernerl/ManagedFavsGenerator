@@ -27,10 +27,11 @@ Instead of manually creating complex JSON or Plist files, you use a simple, intu
 - 🎨 **Native macOS Design** - Modern, fluid interface with animations
 - ⌨️ **Keyboard Shortcuts** - Fast workflow (⌘N to add, ⌘S to export, ⌘⇧C to copy)
 - 💾 **Persistent Storage** - Your favorites are saved automatically
-- 📋 **Multiple Formats** - Generates JSON (Windows GPO/Settings Catalog, Cloud Policy) and Plist (macOS Intune)
+- 📋 **Multiple Formats** - Generates JSON (Windows GPO/Settings Catalog, Cloud Policy) and Plist (macOS Intune), switchable via tabs in the output panel
 - 🎯 **Target Groups** - Maintain extra favorites for a specific audience (e.g. an Entra group) alongside the base set, either merged in as a subfolder or replacing the base set for that audience — exported as its own ready-to-paste Cloud Policy value
+- 🗂️ **Profiles** - Keep several fully independent environments (e.g. "OnPrem", "HomeOffice") in one app, each with its own favorites, target groups, and toplevel name — switch via the sidebar
 - 🚀 **Export Ready** - One-click export or copy to clipboard
-- ⚙️ **Configurable** - Customize toplevel names for your organization
+- ⚙️ **Configurable** - Customize each profile's toplevel name
 
 ## 📋 Requirements
 
@@ -138,10 +139,19 @@ cat checksums.txt
 
 ## 📖 How To Use
 
-### 1. **Add Favorites**
+> The screenshots below predate the profile sidebar and tabbed layout introduced after v1.1.0 — button locations described in the text are current, refreshed screenshots are pending.
+
+### 1. **Profiles**
+
+The left-hand rail lists your **profiles** — fully independent environments (e.g. "OnPrem", "HomeOffice"), each with its own favorites, target groups, and toplevel name. Nothing is shared between them.
+- Click a profile's avatar to switch to it
+- Click **+** at the bottom of the rail to create a new one
+- Right-click a profile to **Rename** or **Delete** it (a profile's favorites and target groups are deleted with it; you always keep at least one)
+
+### 2. **Add Favorites**
 <img width="344" height="73" alt="image" src="https://github.com/user-attachments/assets/751075e3-8b0c-4776-8087-105daa42cb4f" />
 
-Press **⌘N** or click the **Add Favorite** button in the toolbar:
+With the **Favorites** tab selected in the left pane, press **⌘N** or click **Add Favorite**:
 - **Name**: Display name (e.g., "Company Portal")
 - **URL**: Full URL including `https://`
 
@@ -149,24 +159,21 @@ Press **⌘N** or click the **Add Favorite** button in the toolbar:
 
 <img width="329" height="68" alt="image" src="https://github.com/user-attachments/assets/3789c903-734d-4d95-a7f4-3ffcbe1eba4a" />
 
-Press **(⌘⇧N)** or click the **Add Folders** button to organize favorites hierarchically.
+Press **⌘⇧N** or click **Add Folder** to organize favorites hierarchically (one level deep).
 <img width="467" height="250" alt="image" src="https://github.com/user-attachments/assets/f70e268d-995f-490a-9188-65b7f0f311d2" />
 
-
-### 2. **Move position by Drag and Drop
+### 3. **Move position by Drag and Drop**
 
 <img width="235" height="143" alt="image" src="https://github.com/user-attachments/assets/bdcd796e-6eb1-4652-ab99-9217c8fad0eb" />
 
+### 4. **Import Existing Configuration**
 
-
-### 2. **Import Existing Configuration** 
-
-Import existing configurations from other sources or backups:
+Import existing configurations from other sources or backups — into the currently active profile:
 
 #### **JSON Import (Copy/Paste)** - ⌘I
 <img width="336" height="68" alt="image" src="https://github.com/user-attachments/assets/19fb6204-f558-490f-bf11-97db2324aa4a" />
 
-- Click **Import JSON** or press **⌘I**
+- Click **Import JSON** in the toolbar or press **⌘I**
 - Dialog opens with text editor
 - Paste your JSON configuration
 - Click **Import**
@@ -175,48 +182,48 @@ Import existing configurations from other sources or backups:
 #### **Plist Import (File Selection)** - ⌘⇧I
 <img width="412" height="65" alt="image" src="https://github.com/user-attachments/assets/47ca89c5-650e-48c1-97e0-d7d66ad4fa7b" />
 
-- Click **Import Plist** or press **⌘⇧I**
+- Click **Import Plist** in the toolbar or press **⌘⇧I**
 - Select `.plist` file from your system
 - Supports full Plist files and Intune fragments
 - Automatically handles files without XML headers
 
-### 3. **Generate Outputs**
+### 5. **Generate Outputs**
 
-The app automatically generates three outputs as you add favorites:
+The right pane always shows **one** output at a time — pick it with the tab strip at the top: **JSON**, **Plist**, **Cloud Policy**, and one tab per non-empty Target Group. The description and action buttons next to the tabs update for whichever is selected.
 
-#### **JSON Format** (for Windows/GPO)
+#### **JSON** (for Windows/GPO)
 - Used for on-premises Group Policy
 - Used for Intune Settings Catalog (Windows)
-- Press **⌘⇧C** to copy to clipboard
+- Click **Copy** or press **⌘⇧C**
 
-#### **Plist Format** (for macOS/Intune)
+#### **Plist** (for macOS/Intune)
 - Used for Intune Device Configuration Profiles
-- Press **⌘S** to export as file
-- Or click Copy to copy to clipboard
+- Click **Export** or press **⌘S** to save as a file
+- Or click **Copy**
 
 #### **Cloud Policy** (for the Edge management service)
 - Same JSON schema as the GPO/Settings Catalog output — paste it as the `ManagedFavorites` value of a Cloud configuration policy in the Microsoft 365 Admin Center
 - Resolved per signed-in Edge profile and assignable to an Entra ID group, so it reaches only the intended audience instead of the whole device
-- Select the card's text and copy manually (no dedicated shortcut yet)
+- Click **Copy** or press **⌘⇧C**
 
-### 3a. **Target Groups (optional)**
+### 6. **Target Groups (optional)**
 
-If part of your organization needs extra favorites that the rest shouldn't get, add a **Target Group** below the main favorites list instead of maintaining a second document:
+If part of your organization needs extra favorites that the rest shouldn't get, switch to the **Target Groups** tab in the left pane and click **Add Group** instead of maintaining a second document:
 - **Merge into base set**: the base favorites stay, the group is appended as its own subfolder — assign as an additive, lower-priority Cloud policy
 - **Replace base set**: the group becomes its own toplevel folder, replacing the base set for that audience — assign as the *highest*-priority Cloud policy for that Entra group, since `ManagedFavorites` does not merge across policies (the highest-priority policy wins completely)
 
-Each Target Group gets its own output card, generated the same way as the base set.
+Each non-empty Target Group gets its own tab in the output panel, generated the same way as the base set.
 
-### 4. **Configure Toplevel Name**
+### 7. **Configure Toplevel Name**
 <img width="519" height="111" alt="image" src="https://github.com/user-attachments/assets/0e1d3dd3-7e6d-4d4d-9a1e-43fc38cd872d" />
 
-The toplevel name (default: `managedFavs`) is the root key in your configuration. Change it in Settings (⌘,) if needed.
+The toplevel name (default: `managedFavs`) is the root key in your configuration — and belongs to the **active profile**. Change it in Settings (⌘,); switch profiles first if you meant to edit a different one's.
 
-### 5. **Deploy to Your Organization**
+### 8. **Deploy to Your Organization**
 
-See deployment guides below for Windows GPO, Intune Windows, or Intune macOS.
+See deployment guides below for Windows GPO, Intune Windows, Intune macOS, or the Edge management service's Cloud Policy.
 
-### 6. **Choose Favicon Provider
+### 9. **Choose Favicon Provider**
 <img width="605" height="108" alt="image" src="https://github.com/user-attachments/assets/9b560300-c968-4042-b9f5-94e9a0bb6515" />
 
 Favicons load automatically when URL is entered. Display favicons next to favorite entries to make them visually recognizable.

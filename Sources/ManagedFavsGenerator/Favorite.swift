@@ -12,13 +12,14 @@ final class Favorite {
     var order: Int = 0      // For sorting within same level (default: 0)
     var createdAt: Date
     var groupID: UUID?      // nil = belongs to the base tree, otherwise the owning TargetGroup.id
+    var profileID: UUID?    // the owning Profile.id
 
     /// Computed property to check if this is a folder
     var isFolder: Bool {
         url == nil
     }
 
-    init(id: UUID = UUID(), name: String = "", url: String? = "", parentID: UUID? = nil, order: Int = 0, groupID: UUID? = nil) {
+    init(id: UUID = UUID(), name: String = "", url: String? = "", parentID: UUID? = nil, order: Int = 0, groupID: UUID? = nil, profileID: UUID? = nil) {
         self.id = id
         self.name = name
         self.url = url
@@ -26,5 +27,6 @@ final class Favorite {
         self.order = order
         self.createdAt = Date()
         self.groupID = groupID
+        self.profileID = profileID
     }
 }

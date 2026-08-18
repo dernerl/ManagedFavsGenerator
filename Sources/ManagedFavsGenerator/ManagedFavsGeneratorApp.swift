@@ -16,7 +16,7 @@ struct ManagedFavsGeneratorApp: App {
     init() {
         do {
             // ModelContainer für Favorite Model erstellen
-            modelContainer = try ModelContainer(for: Favorite.self, TargetGroup.self)
+            modelContainer = try ModelContainer(for: Favorite.self, TargetGroup.self, Profile.self)
         } catch {
             fatalError("Could not initialize ModelContainer: \(error)")
         }

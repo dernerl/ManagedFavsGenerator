@@ -15,11 +15,13 @@ final class TargetGroup {
     var name: String
     var includeBase: Bool
     var order: Int
+    var profileID: UUID?    // the owning Profile.id
 
-    init(id: UUID = UUID(), name: String = "New Group", includeBase: Bool = true, order: Int = 0) {
+    init(id: UUID = UUID(), name: String = "New Group", includeBase: Bool = true, order: Int = 0, profileID: UUID? = nil) {
         self.id = id
         self.name = name
         self.includeBase = includeBase
         self.order = order
+        self.profileID = profileID
     }
 }
