@@ -102,6 +102,65 @@ class FavoritesViewModel {
         }
     }
     
+    // MARK: - Target Groups
+
+    func addTargetGroup() {
+        guard let modelContext = modelContext else {
+            logger.error("ModelContext nicht verfügbar")
+            return
+        }
+
+        let existingCount = (try? modelContext.fetchCount(FetchDescriptor<TargetGroup>())) ?? 0
+        let group = TargetGroup(order: existingCount)
+        modelContext.insert(group)
+
+        do {
+            try modelContext.save()
+            logger.info("Zielgruppe hinzugefügt und gespeichert")
+        } catch {
+            logger.error("Fehler beim Speichern: \(error.localizedDescription)")
+            handleError(error)
+        }
+    }
+
+    func removeTargetGroup(_ group: TargetGroup, favorites: [Favorite]) {
+        guard let modelContext = modelContext else {
+            logger.error("ModelContext nicht verfügbar")
+            return
+        }
+
+        for favorite in favorites where favorite.groupID == group.id {
+            modelContext.delete(favorite)
+        }
+        modelContext.delete(group)
+
+        do {
+            try modelContext.save()
+            logger.info("Zielgruppe entfernt")
+        } catch {
+            logger.error("Fehler beim Löschen: \(error.localizedDescription)")
+            handleError(error)
+        }
+    }
+
+    func addGroupFavorite(groupID: UUID) {
+        guard let modelContext = modelContext else {
+            logger.error("ModelContext nicht verfügbar")
+            return
+        }
+
+        let favorite = Favorite(groupID: groupID)
+        modelContext.insert(favorite)
+
+        do {
+            try modelContext.save()
+            logger.info("Favorit zu Zielgruppe hinzugefügt und gespeichert")
+        } catch {
+            logger.error("Fehler beim Speichern: \(error.localizedDescription)")
+            handleError(error)
+        }
+    }
+
     // MARK: - Drag & Drop
     
     func moveFavorite(_ favorite: Favorite, toParent newParentID: UUID?, atIndex index: Int, allFavorites: [Favorite]) {

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Target Groups** - Maintain extra favorites for a specific audience alongside the base set (#18)
+  - Add/remove named groups, each with a flat list of favorites (no sub-folders)
+  - "Merge into base set" mode: base favorites stay, group is appended as a subfolder
+  - "Replace base set" mode: group becomes its own toplevel folder, replacing the base set for that audience
+  - One output card per non-empty group, generated with the same JSON schema as the base output
+- **Cloud Policy output** - Third output card documenting the Edge management service's Cloud configuration policy as a per-profile, cross-platform deployment channel, alongside the existing GPO/Settings Catalog JSON and Intune macOS Plist (#18)
+
 ## [1.1.0] - 2024-12-19
 
 ### Added

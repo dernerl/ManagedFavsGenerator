@@ -7,18 +7,30 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     // Note: @Query is a SwiftData macro, not a GitHub user mention
     @Query(sort: \Favorite.createdAt) private var favorites: [Favorite]
+    @Query(sort: \TargetGroup.order) private var targetGroups: [TargetGroup]
     @State private var viewModel = FavoritesViewModel()
     @State private var showImportJSON = false
     @Environment(\.openWindow) private var openWindow
-    
-    /// Root level items (no parent)
-    private var rootLevelItems: [Favorite] {
-        favorites.filter { $0.parentID == nil }.sorted { $0.order < $1.order }
+
+    /// Base tree only — excludes items that belong to a Target Group, since they share the
+    /// same table but must never leak into the base JSON/Plist export.
+    private var baseFavorites: [Favorite] {
+        favorites.filter { $0.groupID == nil }
     }
-    
+
+    /// Root level items (no parent, no target group)
+    private var rootLevelItems: [Favorite] {
+        baseFavorites.filter { $0.parentID == nil }.sorted { $0.order < $1.order }
+    }
+
     /// Get children of a folder
     private func childrenOf(_ folder: Favorite) -> [Favorite] {
         favorites.filter { $0.parentID == folder.id }.sorted { $0.order < $1.order }
+    }
+
+    /// Favorites belonging to a target group (flat, no sub-folders)
+    private func groupFavorites(_ group: TargetGroup) -> [Favorite] {
+        favorites.filter { $0.groupID == group.id }
     }
     
     /// Handle drop operation
@@ -106,7 +118,7 @@ struct ContentView: View {
                 Button {
                     let json = FormatGenerator.generateJSON(
                         toplevelName: viewModel.toplevelName,
-                        favorites: favorites
+                        favorites: baseFavorites
                     )
                     viewModel.copyToClipboard(json)
                 } label: {
@@ -114,7 +126,7 @@ struct ContentView: View {
                 }
                 .keyboardShortcut("c", modifiers: [.command, .shift])
                 .help("Copy JSON to clipboard (⌘⇧C)")
-                .disabled(favorites.isEmpty)
+                .disabled(baseFavorites.isEmpty)
                 
                 Divider()
                 
@@ -137,14 +149,14 @@ struct ContentView: View {
                 // Export Plist
                 Button {
                     Task {
-                        await viewModel.exportPlist(favorites: favorites)
+                        await viewModel.exportPlist(favorites: baseFavorites)
                     }
                 } label: {
                     Label("Export", systemImage: "square.and.arrow.up")
                 }
                 .keyboardShortcut("s", modifiers: [.command])
                 .help("Export Plist file (⌘S)")
-                .disabled(favorites.isEmpty)
+                .disabled(baseFavorites.isEmpty)
             }
         }
         .onAppear {
@@ -298,7 +310,7 @@ struct ContentView: View {
                 }
             }
             
-            if favorites.isEmpty {
+            if rootLevelItems.isEmpty {
                 ContentUnavailableView {
                     Label("No Favorites", systemImage: "star.slash")
                 } description: {
@@ -316,10 +328,63 @@ struct ContentView: View {
                 }
                 .padding()
             }
+
+            Divider()
+
+            targetGroupsSection
         }
         .padding()
     }
-    
+
+    // MARK: - Target Groups Section
+
+    private var targetGroupsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Target Groups")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    Text("Optional extra favorites for one audience (e.g. an Entra group), exported alongside the base set for a Cloud Policy assignment")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        viewModel.addTargetGroup()
+                    }
+                } label: {
+                    Label("Add Group", systemImage: "person.badge.plus")
+                }
+            }
+
+            ForEach(targetGroups) { group in
+                TargetGroupCardView(
+                    group: group,
+                    items: groupFavorites(group),
+                    onAddItem: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            viewModel.addGroupFavorite(groupID: group.id)
+                        }
+                    },
+                    onRemoveItem: { item in
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            viewModel.removeFavorite(item)
+                        }
+                    },
+                    onRemoveGroup: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            viewModel.removeTargetGroup(group, favorites: favorites)
+                        }
+                    }
+                )
+            }
+        }
+    }
+
     // MARK: - Output Section
     
     private var outputSection: some View {
@@ -356,22 +421,55 @@ struct ContentView: View {
                     // GPO / Intune Windows
                     OutputFormatCard(
                         title: "GPO & Intune Windows (JSON)",
-                        subtitle: "For onPrem GPO and Intune Settings Catalog",
+                        subtitle: "For onPrem GPO and Intune Settings Catalog. Device-wide — every profile on the machine gets this set.",
                         content: FormatGenerator.generateJSON(
                             toplevelName: viewModel.toplevelName,
-                            favorites: favorites
+                            favorites: baseFavorites
                         )
                     )
-                    
+
                     // Intune macOS
                     OutputFormatCard(
                         title: "Intune macOS (Plist)",
-                        subtitle: "For Intune Device Configuration Profile",
+                        subtitle: "For an Intune Device Configuration Profile. Device-wide — every profile on the machine gets this set.",
                         content: FormatGenerator.generatePlist(
                             toplevelName: viewModel.toplevelName,
-                            favorites: favorites
+                            favorites: baseFavorites
                         )
                     )
+
+                    // Edge management service (Cloud Policy)
+                    OutputFormatCard(
+                        title: "Edge management service (Cloud Policy)",
+                        subtitle: "Paste as the ManagedFavorites value of a Cloud configuration policy (Microsoft 365 Admin Center → Settings → Microsoft Edge). Resolved per signed-in profile and assignable to an Entra ID group — cross-platform (Windows, macOS, iOS, Android), unlike the two device-wide channels above. Note: a GPO or Intune device profile still wins over this if one is also present on the device.",
+                        content: FormatGenerator.generateJSON(
+                            toplevelName: viewModel.toplevelName,
+                            favorites: baseFavorites
+                        )
+                    )
+
+                    ForEach(targetGroups) { group in
+                        let items = groupFavorites(group)
+                        if !items.isEmpty {
+                            OutputFormatCard(
+                                title: "\(group.name) — Cloud Policy (\(group.includeBase ? "merged" : "standalone"))",
+                                subtitle: group.includeBase
+                                    ? "Base set plus \"\(group.name)\" as a subfolder. Assign to the target group as an additive, lower-priority Cloud policy."
+                                    : "Replaces the base set entirely for \"\(group.name)\". Assign as the highest-priority Cloud policy for that Entra group — ManagedFavorites does not merge across policies, the highest priority wins completely.",
+                                content: group.includeBase
+                                    ? FormatGenerator.generateJSON(
+                                        toplevelName: viewModel.toplevelName,
+                                        favorites: baseFavorites,
+                                        appending: group,
+                                        groupFavorites: items
+                                      )
+                                    : FormatGenerator.generateJSON(
+                                        toplevelName: group.name,
+                                        favorites: items
+                                      )
+                            )
+                        }
+                    }
                 }
             }
         }
