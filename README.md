@@ -11,8 +11,11 @@ All code come from Atlassian Rovo Dev (anthropic.claude-sonnet-4-5-20250929-v1:0
 
 This app helps IT administrators create and manage Microsoft Edge favorites that can be deployed to users across an organization. It generates properly formatted configuration files for:
 
-- **Windows devices** (via Group Policy or Intune)
-- **macOS devices** (via Intune)
+- **Windows devices** (via Group Policy or Intune) — device-wide
+- **macOS devices** (via Intune) — device-wide
+- **A specific audience, any platform** (via the Edge management service's Cloud Policy) — per-profile, assignable to an Entra ID group, works on Windows/macOS/iOS/Android from one policy
+
+The first two channels write into the OS-level Managed Preferences domain, so every browser profile on the device gets the same favorites. The Cloud Policy channel is resolved per the identity signed into the Edge profile instead, so it's the one to reach for when only part of your organization should get a given set of favorites. See [Deployment Scenarios](#-deployment-scenarios) below.
 
 Instead of manually creating complex JSON or Plist files, you use a simple, intuitive interface to:
 1. Add favorites (name + URL)
@@ -24,9 +27,11 @@ Instead of manually creating complex JSON or Plist files, you use a simple, intu
 - 🎨 **Native macOS Design** - Modern, fluid interface with animations
 - ⌨️ **Keyboard Shortcuts** - Fast workflow (⌘N to add, ⌘S to export, ⌘⇧C to copy)
 - 💾 **Persistent Storage** - Your favorites are saved automatically
-- 📋 **Multiple Formats** - Generates both JSON (Windows) and Plist (macOS)
+- 📋 **Multiple Formats** - Generates JSON (Windows GPO/Settings Catalog, Cloud Policy) and Plist (macOS Intune), switchable via tabs in the output panel
+- 🎯 **Target Groups** - Maintain extra favorites for a specific audience (e.g. an Entra group) alongside the base set, either merged in as a subfolder or replacing the base set for that audience — exported as its own ready-to-paste Cloud Policy value
+- 🗂️ **Profiles** - Keep several fully independent environments (e.g. "OnPrem", "HomeOffice") in one app, each with its own favorites, target groups, and toplevel name — switch via the sidebar
 - 🚀 **Export Ready** - One-click export or copy to clipboard
-- ⚙️ **Configurable** - Customize toplevel names for your organization
+- ⚙️ **Configurable** - Customize each profile's toplevel name
 
 ## 📋 Requirements
 
@@ -134,10 +139,19 @@ cat checksums.txt
 
 ## 📖 How To Use
 
-### 1. **Add Favorites**
+> The screenshots below predate the profile sidebar and tabbed layout introduced after v1.1.0 — button locations described in the text are current, refreshed screenshots are pending.
+
+### 1. **Profiles**
+
+The left-hand rail lists your **profiles** — fully independent environments (e.g. "OnPrem", "HomeOffice"), each with its own favorites, target groups, and toplevel name. Nothing is shared between them.
+- Click a profile's avatar to switch to it
+- Click **+** at the bottom of the rail to create a new one
+- Right-click a profile to **Rename** or **Delete** it (a profile's favorites and target groups are deleted with it; you always keep at least one)
+
+### 2. **Add Favorites**
 <img width="344" height="73" alt="image" src="https://github.com/user-attachments/assets/751075e3-8b0c-4776-8087-105daa42cb4f" />
 
-Press **⌘N** or click the **Add Favorite** button in the toolbar:
+With the **Favorites** tab selected in the left pane, press **⌘N** or click **Add Favorite**:
 - **Name**: Display name (e.g., "Company Portal")
 - **URL**: Full URL including `https://`
 
@@ -145,24 +159,21 @@ Press **⌘N** or click the **Add Favorite** button in the toolbar:
 
 <img width="329" height="68" alt="image" src="https://github.com/user-attachments/assets/3789c903-734d-4d95-a7f4-3ffcbe1eba4a" />
 
-Press **(⌘⇧N)** or click the **Add Folders** button to organize favorites hierarchically.
+Press **⌘⇧N** or click **Add Folder** to organize favorites hierarchically (one level deep).
 <img width="467" height="250" alt="image" src="https://github.com/user-attachments/assets/f70e268d-995f-490a-9188-65b7f0f311d2" />
 
-
-### 2. **Move position by Drag and Drop
+### 3. **Move position by Drag and Drop**
 
 <img width="235" height="143" alt="image" src="https://github.com/user-attachments/assets/bdcd796e-6eb1-4652-ab99-9217c8fad0eb" />
 
+### 4. **Import Existing Configuration**
 
-
-### 2. **Import Existing Configuration** 
-
-Import existing configurations from other sources or backups:
+Import existing configurations from other sources or backups — into the currently active profile:
 
 #### **JSON Import (Copy/Paste)** - ⌘I
 <img width="336" height="68" alt="image" src="https://github.com/user-attachments/assets/19fb6204-f558-490f-bf11-97db2324aa4a" />
 
-- Click **Import JSON** or press **⌘I**
+- Click **Import JSON** in the toolbar or press **⌘I**
 - Dialog opens with text editor
 - Paste your JSON configuration
 - Click **Import**
@@ -171,35 +182,48 @@ Import existing configurations from other sources or backups:
 #### **Plist Import (File Selection)** - ⌘⇧I
 <img width="412" height="65" alt="image" src="https://github.com/user-attachments/assets/47ca89c5-650e-48c1-97e0-d7d66ad4fa7b" />
 
-- Click **Import Plist** or press **⌘⇧I**
+- Click **Import Plist** in the toolbar or press **⌘⇧I**
 - Select `.plist` file from your system
 - Supports full Plist files and Intune fragments
 - Automatically handles files without XML headers
 
-### 3. **Generate Outputs**
+### 5. **Generate Outputs**
 
-The app automatically generates two formats as you add favorites:
+The right pane always shows **one** output at a time — pick it with the tab strip at the top: **JSON**, **Plist**, **Cloud Policy**, and one tab per non-empty Target Group. The description and action buttons next to the tabs update for whichever is selected.
 
-#### **JSON Format** (for Windows/GPO)
+#### **JSON** (for Windows/GPO)
 - Used for on-premises Group Policy
 - Used for Intune Settings Catalog (Windows)
-- Press **⌘⇧C** to copy to clipboard
+- Click **Copy** or press **⌘⇧C**
 
-#### **Plist Format** (for macOS/Intune)
+#### **Plist** (for macOS/Intune)
 - Used for Intune Device Configuration Profiles
-- Press **⌘S** to export as file
-- Or click Copy to copy to clipboard
+- Click **Export** or press **⌘S** to save as a file
+- Or click **Copy**
 
-### 4. **Configure Toplevel Name**
+#### **Cloud Policy** (for the Edge management service)
+- Same JSON schema as the GPO/Settings Catalog output — paste it as the `ManagedFavorites` value of a Cloud configuration policy in the Microsoft 365 Admin Center
+- Resolved per signed-in Edge profile and assignable to an Entra ID group, so it reaches only the intended audience instead of the whole device
+- Click **Copy** or press **⌘⇧C**
+
+### 6. **Target Groups (optional)**
+
+If part of your organization needs extra favorites that the rest shouldn't get, switch to the **Target Groups** tab in the left pane and click **Add Group** instead of maintaining a second document:
+- **Merge into base set**: the base favorites stay, the group is appended as its own subfolder — assign as an additive, lower-priority Cloud policy
+- **Replace base set**: the group becomes its own toplevel folder, replacing the base set for that audience — assign as the *highest*-priority Cloud policy for that Entra group, since `ManagedFavorites` does not merge across policies (the highest-priority policy wins completely)
+
+Each non-empty Target Group gets its own tab in the output panel, generated the same way as the base set.
+
+### 7. **Configure Toplevel Name**
 <img width="519" height="111" alt="image" src="https://github.com/user-attachments/assets/0e1d3dd3-7e6d-4d4d-9a1e-43fc38cd872d" />
 
-The toplevel name (default: `managedFavs`) is the root key in your configuration. Change it in Settings (⌘,) if needed.
+The toplevel name (default: `managedFavs`) is the root key in your configuration — and belongs to the **active profile**. Change it in Settings (⌘,); switch profiles first if you meant to edit a different one's.
 
-### 5. **Deploy to Your Organization**
+### 8. **Deploy to Your Organization**
 
-See deployment guides below for Windows GPO, Intune Windows, or Intune macOS.
+See deployment guides below for Windows GPO, Intune Windows, Intune macOS, or the Edge management service's Cloud Policy.
 
-### 6. **Choose Favicon Provider
+### 9. **Choose Favicon Provider**
 <img width="605" height="108" alt="image" src="https://github.com/user-attachments/assets/9b560300-c968-4042-b9f5-94e9a0bb6515" />
 
 Favicons load automatically when URL is entered. Display favicons next to favorite entries to make them visually recognizable.
@@ -242,6 +266,29 @@ Favicons load automatically when URL is entered. Display favicons next to favori
 **Documentation:**
 - [Use the settings catalog](https://docs.microsoft.com/en-us/mem/intune/configuration/settings-catalog)
 - [Microsoft Edge policies](https://docs.microsoft.com/en-us/deployedge/microsoft-edge-policies)
+
+---
+
+### Any Platform - Edge management service (Cloud Policy)
+
+**For targeting a specific audience instead of a whole device — Windows, macOS, iOS, and Android in one policy:**
+
+1. Copy the **Cloud Policy (JSON)** output from the app
+2. In the **Microsoft 365 Admin Center**: `Settings → Microsoft Edge`
+3. Create a configuration policy:
+   - Type: **Cloud** (not the Intune type — that one is Windows-only)
+   - Setting: **Managed favorites** → paste the JSON as the `ManagedFavorites` value
+4. Assign the policy to an **Entra ID group** (e.g. a dynamic group for a naming pattern, or a static group for a team)
+5. Set policy priority — if you're also assigning a base-set policy to a broader group, put the more specific policy at higher priority (`ManagedFavorites` does not merge across policies; the highest-priority assigned policy wins completely for a given profile)
+6. Fully quit and restart Edge on the client (⌘Q, not just closing the window) — cloud policies also refresh automatically roughly every 90 minutes
+
+**Why this instead of GPO/Intune for a partial rollout:** GPO and the Intune "Preference file" profile both land in the OS-level Managed Preferences domain, which every browser profile on the device reads identically — there's no way to target "just this profile" through either channel, regardless of how the config file itself was produced. The Edge management service's Cloud policy type is resolved through the Entra identity signed into the profile instead, which is what makes per-audience targeting possible without replacing the policy for every other user of that device.
+
+**Precedence gotcha:** if the same device also receives `ManagedFavorites` from a GPO or an Intune device profile, that value wins over the Cloud policy — check `edge://policy` on the client to see which source is actually active before assuming the Cloud policy isn't working.
+
+**Documentation:**
+- [ManagedFavorites policy reference](https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies/managedfavorites) (see "Per Profile: Yes")
+- [Get started with configuration policies — Microsoft Edge management service](https://learn.microsoft.com/en-us/deployedge/microsoft-edge-management-service)
 
 ---
 
@@ -311,6 +358,12 @@ The app generates a complete macOS Configuration Profile with:
 - Force device sync from Company Portal
 - Check profile installation: System Settings → Profiles
 - Verify Edge is installed and up to date
+
+**Cloud Policy (Edge management service):**
+- Check `edge://policy` on the client — it shows both the effective value and its source (Cloud vs. Platform)
+- If the source shown is Platform, a GPO or Intune device profile is winning; that always takes precedence over a Cloud policy
+- Confirm the signed-in profile's account is actually a member of the assigned Entra ID group
+- Fully quit Edge (⌘Q) and reopen — cloud policies apply on restart, not live
 
 ### Invalid Configuration Errors
 

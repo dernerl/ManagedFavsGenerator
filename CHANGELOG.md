@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Target Groups** - Maintain extra favorites for a specific audience alongside the base set (#18)
+  - Add/remove named groups, each with a flat list of favorites (no sub-folders)
+  - "Merge into base set" mode: base favorites stay, group is appended as a subfolder
+  - "Replace base set" mode: group becomes its own toplevel folder, replacing the base set for that audience
+  - One output card per non-empty group, generated with the same JSON schema as the base output
+- **Cloud Policy output** - Third output tab documenting the Edge management service's Cloud configuration policy as a per-profile, cross-platform deployment channel, alongside the existing GPO/Settings Catalog JSON and Intune macOS Plist (#18)
+- **Profiles** - Save and switch between multiple named, fully independent environments (e.g. "OnPrem", "HomeOffice") in one app — each with its own favorites, target groups, and toplevel name (#15)
+  - Profile rail on the left: click to switch, "+" to add, right-click to rename or delete
+  - First launch after updating migrates existing favorites/target groups into a new "Default" profile automatically
+
+### Changed
+- **Reorganized layout** - Buttons now live next to what they act on instead of a shared toolbar (#16)
+  - Add Favorite / Add Folder moved into the Favorites tab's header row
+  - Copy (and Export, for Plist) moved into the output panel's header row
+  - The toolbar now holds only Import actions and the active profile's name
+- **Output panel is now tabbed** - JSON / Plist / Cloud Policy / one tab per non-empty Target Group, showing one output at a time instead of stacking every format's card
+- **Left pane is now tabbed** - Favorites / Target Groups, instead of stacking both sections permanently
+
 ## [1.1.0] - 2024-12-19
 
 ### Added
